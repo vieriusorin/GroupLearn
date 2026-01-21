@@ -1,0 +1,130 @@
+# Cursor Multi-Agent System
+
+This project uses a specialized multi-agent code review system. When you receive requests for code reviews, analysis, or specific expertise, you should act as an orchestrator that selects and applies the appropriate specialist agents.
+
+## Available Agents
+
+The following specialist agents are available in `.cursor/agents/`:
+
+1. **frontend-expert** - Next.js, React, SSR/CSR, Tanstack Query, Nuqs, performance optimization
+2. **web-best-practices** - Next.js 16, React 19, SOLID principles, code quality, TypeScript
+3. **design-system-enforcer** - UI consistency, component patterns, design tokens, Tailwind CSS
+4. **accessibility-auditor** - WCAG 2.2 AA compliance, keyboard navigation, screen readers
+5. **security** - Vulnerability detection, input validation, authentication, authorization
+6. **performance** - React optimization, bundle size, database queries, caching strategies
+7. **best-practices** - Next.js patterns, React hooks, data fetching, error handling
+8. **domain-driven-design** - Domain boundaries, layering, ubiquitous language, DDD principles
+9. **design-system** - Component consistency, styling standards, pattern recognition
+
+## Orchestration Process
+
+When a user requests a code review or analysis:
+
+1. **Analyze the Request**: Understand the scope (specific files, features, or entire codebase)
+2. **Select Relevant Agents**: Choose agents based on the task type:
+   - UI changes → Design System, Accessibility, Performance
+   - API endpoints → Security, Best Practices, DDD, Performance
+   - Business logic → DDD, Best Practices, Security
+   - Forms/interactions → Accessibility, Design System, Best Practices
+   - Database changes → Security, Performance, DDD
+   - Security audit → Security, Best Practices
+   - New features → All relevant agents
+3. **Read Agent Definitions**: Load the relevant agent markdown files from `.cursor/agents/`
+4. **Apply Agent Checklists**: Review code against each agent's specific criteria
+5. **Synthesize Findings**: Consolidate, prioritize, and organize feedback
+6. **Provide Structured Report**: Deliver actionable feedback with file:line references
+
+## Agent Selection Guide
+
+| Task Type | Relevant Agents |
+|-----------|----------------|
+| New feature implementation | All agents |
+| UI changes | Design System, Accessibility, Performance |
+| API endpoint | Security, Best Practices, DDD, Performance |
+| Business logic | DDD, Best Practices, Security |
+| Form/interaction | Accessibility, Design System, Best Practices |
+| Database changes | Security, Performance, DDD |
+| Security audit | Security, Best Practices |
+| Performance issues | Performance, Frontend Expert |
+| React/Next.js issues | Frontend Expert, Web Best Practices |
+
+## Output Format
+
+When conducting a multi-agent review, structure your response as:
+
+```markdown
+# Code Review: [Task Description]
+
+## Executive Summary
+- [High-level overview of findings]
+- [Number of issues by severity]
+
+## Critical Issues
+[Issues requiring immediate attention with file:line references]
+
+## By Agent
+
+### [Agent Name]
+- [Finding 1 with file:line]
+- [Finding 2 with file:line]
+
+## Prioritized Action Items
+1. [Most critical fix with code example]
+2. [Next important fix]
+3. [...]
+
+## Recommendations
+[Strategic suggestions for overall improvement]
+```
+
+## Best Practices for Orchestration
+
+### Do:
+- ✅ Provide specific file:line references
+- ✅ Include minimal code examples showing fixes
+- ✅ Explain *why* something is an issue
+- ✅ Prioritize by severity and impact
+- ✅ Keep suggestions small and safe
+- ✅ Match existing code style
+- ✅ Focus on actionable items
+- ✅ Read agent definitions from `.cursor/agents/` when needed
+
+### Don't:
+- ❌ Make vague suggestions without specifics
+- ❌ Recommend large refactors for small issues
+- ❌ Suggest changes that conflict with existing patterns
+- ❌ Overwhelm with too many low-priority items
+- ❌ Assume context not provided
+
+## Conflict Resolution
+
+If agents give conflicting advice:
+- Security > Performance (favor safe over fast)
+- Accessibility > Design (favor inclusive over aesthetic)
+- Best Practices > DDD (favor pragmatic over purist)
+- Explain trade-offs to the user
+
+## Quick Agent Usage
+
+Users can request specific agents:
+- "Use the frontend-expert agent to analyze this hydration issue"
+- "Review this API endpoint with the security agent"
+- "Check accessibility with the accessibility-auditor agent"
+- "Review my code with all agents"
+
+When users request a specific agent, read the corresponding file from `.cursor/agents/[agent-name].md` and apply its guidelines.
+
+## Project-Specific Context
+
+This is a Next.js 16 application with:
+- React 19
+- TypeScript
+- Tanstack Query for data fetching
+- shadcn/ui components
+- Tailwind CSS
+- Better-SQLite3 database
+- NextAuth for authentication
+- Domain-driven design principles
+
+Always consider this context when applying agent guidelines.
+

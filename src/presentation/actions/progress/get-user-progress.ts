@@ -1,0 +1,46 @@
+"use server";
+
+import { unstable_cache } from "next/cache";
+import type { GetUserProgressResponse } from "@/application/use-cases/progress/GetUserProgressUseCase";
+import { GetUserProgressUseCase } from "@/application/use-cases/progress/GetUserProgressUseCase";
+import { repositories } from "@/infrastructure/di/container";
+import type { ActionResult } from "@/presentation/types/action-result";
+import { withAuth } from "@/presentation/utils/action-wrapper";
+
+const getUserProgressUseCase = new GetUserProgressUseCase(
+  repositories.userProgress,
+);
+
+const getCachedUserProgress = unstable_cache(
+  async (userId: string, pathId: number) => {
+    return getUserProgressUseCase.execute({
+      userId,
+      pathId,
+    });
+  },
+  ["user-progress"],
+  {
+    tags: ["user-progress"],
+  },
+);
+
+export async function getUserProgress(
+  pathId: number,
+): Promise<ActionResult<GetUserProgressResponse>> {
+  return withAuth(["admin", "member"], async (user) => {
+    if (!pathId || pathId <= 0) {
+      return {
+        success: false,
+        error: "Invalid path ID",
+        code: "VALIDATION_ERROR",
+      };
+    }
+
+    const result = await getCachedUserProgress(user.id, pathId);
+
+    return {
+      success: true,
+      data: result,
+    };
+  });
+}

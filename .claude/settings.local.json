@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sqlite3:*)",
+      "Bash(npm run check:db:*)",
+      "Bash(npm install:*)",
+      "Bash(npx better-sqlite3 \"data/learning-cards.db\" \".schema\")",
+      "WebFetch(domain:ui.shadcn.com)",
+      "Bash(npx shadcn@latest add:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(ls:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm i:*)",
+      "Bash(npx tsx:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(npm uninstall:*)",
+      "Bash(test:*)",
+      "Bash(dir:*)",
+      "Bash(if exist \"D:\\\\Projects\\\\learning-cards\\\\.env.local\" type \"D:\\\\Projects\\\\learning-cards\\\\.env.local\")",
+      "Bash(findstr:*)",
+      "Bash(docker logs:*)",
+      "Bash(npm run tsx:*)",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(psql:*)",
+      "Bash(find:*)",
+      "Bash(for file in src/lib/activity-logger.ts src/lib/analytics.ts src/lib/authorization.ts src/lib/db-operations-paths.ts src/lib/db-operations.ts src/lib/leaderboard-utils.ts src/lib/repositories/admin-stats.repository.ts src/lib/services/review-service.ts src/lib/unlock-system.ts)",
+      "Bash(do sed -i '/db\\\\.close\\(\\);/d' \"$file\")",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(for file in tools/reset-invitations.ts tools/seed-paths.ts)",
+      "Bash(npx tsc:*)",
+      "Bash(grep:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint:fix:*)",
+      "Bash(npx biome:*)"
+    ]
+  }
+}

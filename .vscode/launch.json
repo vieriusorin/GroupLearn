@@ -1,0 +1,19 @@
+{
+  "$schema": "vscode://schemas/launch",
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Agents Chat Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/tools/agents-chat-extension"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/tools/agents-chat-extension/out/**/*.js"
+      ],
+      "preLaunchTask": "compile agents chat extension"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "compile agents chat extension",
+      "type": "shell",
+      "command": "npm",
+      "args": ["--prefix", "tools/agents-chat-extension", "run", "compile"],
+      "problemMatcher": ["$tsc"],
+      "group": "build"
+    }
+  ]
+}

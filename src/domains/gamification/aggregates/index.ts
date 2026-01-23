@@ -1,9 +1,3 @@
-/**
- * Gamification Aggregates
- *
- * This module exports all aggregate roots from the gamification domain.
- */
-
 export type {
   HeartsRefilledEvent,
   LevelUpEvent,

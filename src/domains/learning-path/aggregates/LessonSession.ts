@@ -16,14 +16,8 @@ import { Accuracy } from "../value-objects/Accuracy";
 import { Answer } from "../value-objects/Answer";
 import { Progress } from "../value-objects/Progress";
 
-/**
- * Review mode for lesson
- */
 export type ReviewMode = "flashcard" | "quiz" | "recall";
 
-/**
- * Flashcard data needed for lesson session
- */
 export interface SessionFlashcard {
   id: FlashcardId;
   question: string;
@@ -31,18 +25,6 @@ export interface SessionFlashcard {
   difficulty: DifficultyLevelType;
 }
 
-/**
- * LessonSession Aggregate Root
- *
- * Represents an active lesson session where a user is reviewing flashcards.
- * Manages all business logic for lesson progression, hearts, and completion.
- *
- * Invariants:
- * - Cannot advance past the last card
- * - Hearts cannot go negative
- * - Must have at least one flashcard
- * - Answers are immutable once submitted
- */
 export class LessonSession {
   private answers: Answer[] = [];
   private currentIndex: number = 0;
@@ -59,16 +41,6 @@ export class LessonSession {
     this.validateInvariants();
   }
 
-  /**
-   * Start a new lesson session
-   *
-   * @param lessonId ID of the lesson
-   * @param flashcards Flashcards for the lesson
-   * @param availableHearts Number of hearts available
-   * @param reviewMode Mode of review
-   * @returns New lesson session
-   * @throws DomainError if validation fails
-   */
   static start(
     lessonId: LessonId,
     flashcards: SessionFlashcard[],
@@ -90,14 +62,6 @@ export class LessonSession {
     );
   }
 
-  /**
-   * Submit an answer to the current flashcard
-   *
-   * @param isCorrect Whether the answer was correct
-   * @param timeSpentSeconds Optional time spent on this card
-   * @returns Lesson event indicating what happened
-   * @throws DomainError if session is already complete or failed
-   */
   submitAnswer(isCorrect: boolean, timeSpentSeconds?: number): LessonEvent {
     if (this.isComplete()) {
       throw new DomainError(
@@ -116,7 +80,6 @@ export class LessonSession {
 
     this.answers.push(answer);
 
-    // Handle incorrect answer
     if (!isCorrect) {
       this.hearts = this.hearts.deduct();
 
@@ -126,7 +89,6 @@ export class LessonSession {
       );
       this.events.push(heartLostEvent);
 
-      // Check if hearts depleted (lesson failed)
       if (this.hearts.isEmpty()) {
         const failedEvent = LessonFailedEvent.create(
           this.lessonId,
@@ -138,7 +100,6 @@ export class LessonSession {
       }
     }
 
-    // Check if lesson is complete
     if (this.isLastFlashcard()) {
       const completedEvent = LessonCompletedEvent.create(
         this.lessonId,
@@ -150,7 +111,6 @@ export class LessonSession {
       return completedEvent;
     }
 
-    // Advance to next card
     this.currentIndex++;
     const advancedEvent = CardAdvancedEvent.create(
       this.lessonId,
@@ -162,125 +122,74 @@ export class LessonSession {
     return advancedEvent;
   }
 
-  /**
-   * Get the current flashcard
-   */
   getCurrentFlashcard(): SessionFlashcard {
     return this.flashcards[this.currentIndex];
   }
 
-  /**
-   * Get the current progress through the lesson
-   */
   getProgress(): Progress {
     return Progress.fromRatio(this.currentIndex + 1, this.flashcards.length);
   }
 
-  /**
-   * Get the current accuracy
-   */
   getAccuracy(): Accuracy {
     return this.calculateAccuracy();
   }
 
-  /**
-   * Get current hearts remaining
-   */
   getHearts(): Hearts {
     return this.hearts;
   }
 
-  /**
-   * Get all answers submitted so far
-   */
   getAnswers(): ReadonlyArray<Answer> {
     return [...this.answers];
   }
 
-  /**
-   * Get the review mode
-   */
   getReviewMode(): ReviewMode {
     return this.reviewMode;
   }
 
-  /**
-   * Get when the session was started
-   */
   getStartedAt(): Date {
     return new Date(this.startedAt);
   }
 
-  /**
-   * Calculate time spent on lesson so far
-   */
   getTimeSpentSeconds(): number {
     const now = new Date();
     return Math.floor((now.getTime() - this.startedAt.getTime()) / 1000);
   }
 
-  /**
-   * Check if the lesson is complete
-   */
   isComplete(): boolean {
     return (
       this.isLastFlashcard() && this.answers.length === this.flashcards.length
     );
   }
 
-  /**
-   * Check if the lesson has failed (ran out of hearts)
-   */
   isFailed(): boolean {
     return this.hearts.isEmpty() && !this.isComplete();
   }
 
-  /**
-   * Check if the lesson was perfect (all correct answers)
-   */
   isPerfect(): boolean {
     if (this.answers.length === 0) return false;
     return this.answers.every((answer) => answer.isCorrect());
   }
 
-  /**
-   * Get count of correct answers
-   */
   getCorrectCount(): number {
     return this.answers.filter((answer) => answer.isCorrect()).length;
   }
 
-  /**
-   * Get count of incorrect answers
-   */
   getIncorrectCount(): number {
     return this.answers.filter((answer) => answer.isIncorrect()).length;
   }
 
-  /**
-   * Get all domain events that occurred during this session
-   */
   getEvents(): ReadonlyArray<LessonEvent> {
     return [...this.events];
   }
 
-  /**
-   * Clear events (after they've been published)
-   */
   clearEvents(): void {
     this.events = [];
   }
 
-  /**
-   * Check if this is the last flashcard
-   */
   private isLastFlashcard(): boolean {
     return this.currentIndex >= this.flashcards.length - 1;
   }
 
-  /**
-   * Calculate accuracy based on answers so far
-   */
   private calculateAccuracy(): Accuracy {
     if (this.answers.length === 0) {
       return Accuracy.zero();
@@ -290,9 +199,6 @@ export class LessonSession {
     return Accuracy.fromRatio(correctCount, this.answers.length);
   }
 
-  /**
-   * Validate aggregate invariants
-   */
   private validateInvariants(): void {
     if (this.flashcards.length === 0) {
       throw new DomainError(
@@ -309,9 +215,6 @@ export class LessonSession {
     }
   }
 
-  /**
-   * Convert to plain object for serialization
-   */
   toObject() {
     return {
       lessonId: this.lessonId,

@@ -1,5 +1,6 @@
 "use client";
 
+import type { DashboardStats } from "@/application/dtos";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -9,14 +10,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import type { DashboardStats } from "@/lib/types";
 
 interface DomainProgressCardProps {
   stats: DashboardStats | undefined;
 }
 
 export const DomainProgressCard = ({ stats }: DomainProgressCardProps) => {
-  if (!stats?.domains_progress || stats.domains_progress.length === 0) {
+  if (!stats?.domainsProgress || stats.domainsProgress.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -46,12 +46,11 @@ export const DomainProgressCard = ({ stats }: DomainProgressCardProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {stats.domains_progress.map((domainProgress) => {
+          {stats.domainsProgress.map((domainProgress) => {
             const masteryPercent =
-              domainProgress.total_cards > 0
+              domainProgress.totalCards > 0
                 ? Math.round(
-                    (domainProgress.mastered_cards /
-                      domainProgress.total_cards) *
+                    (domainProgress.masteredCards / domainProgress.totalCards) *
                       100,
                   )
                 : 0;
@@ -71,14 +70,14 @@ export const DomainProgressCard = ({ stats }: DomainProgressCardProps) => {
                   </div>
                   <div className="flex gap-2">
                     <Badge variant="secondary">
-                      {domainProgress.total_cards} cards
+                      {domainProgress.totalCards} cards
                     </Badge>
                     <Badge
                       variant={
-                        domainProgress.due_cards > 0 ? "destructive" : "default"
+                        domainProgress.dueCards > 0 ? "destructive" : "default"
                       }
                     >
-                      {domainProgress.due_cards} due
+                      {domainProgress.dueCards} due
                     </Badge>
                   </div>
                 </div>

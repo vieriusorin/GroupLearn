@@ -1,6 +1,6 @@
 "use client";
 
-import { RichTextEditor } from "@/components/rich-text-editor";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,7 +25,20 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useFlashcardModal } from "@/hooks/admin/useFlashcardModal";
-import type { FlashcardModalProps } from "@/types/flashcard";
+import type { FlashcardModalProps } from "@/presentation/types";
+
+const RichTextEditor = dynamic(
+  () =>
+    import("@/components/rich-text-editor").then((mod) => ({
+      default: mod.RichTextEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[120px] p-3 rounded-md border border-input bg-background animate-pulse" />
+    ),
+  },
+);
 
 export const FlashcardModal = ({
   flashcard,
@@ -77,7 +90,7 @@ export const FlashcardModal = ({
                 <FormItem>
                   <FormLabel>
                     Question{" "}
-                    <span className="text-destructive" aria-label="required">
+                    <span className="text-destructive" aria-hidden="true">
                       *
                     </span>
                   </FormLabel>
@@ -107,7 +120,7 @@ export const FlashcardModal = ({
                 <FormItem>
                   <FormLabel>
                     Answer{" "}
-                    <span className="text-destructive" aria-label="required">
+                    <span className="text-destructive" aria-hidden="true">
                       *
                     </span>
                   </FormLabel>
@@ -131,7 +144,7 @@ export const FlashcardModal = ({
                 <FormItem>
                   <FormLabel>
                     Difficulty{" "}
-                    <span className="text-destructive" aria-label="required">
+                    <span className="text-destructive" aria-hidden="true">
                       *
                     </span>
                   </FormLabel>

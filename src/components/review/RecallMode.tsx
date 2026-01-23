@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import type { Flashcard } from "@/lib/types";
+import type { Flashcard } from "@/infrastructure/database/schema";
 
 interface RecallModeProps {
   card: Flashcard;

@@ -1,16 +1,16 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
-import type { DeleteDomainResponse } from "@/application/use-cases/content/DeleteDomainUseCase";
-import { DeleteDomainUseCase } from "@/application/use-cases/content/DeleteDomainUseCase";
-import { repositories } from "@/infrastructure/di/container";
-import { CACHE_TAGS } from "@/lib/cache-tags";
+import type { DeleteResult } from "@/application/dtos/content.dto";
+import { deleteDomainCommand } from "@/commands/content/DeleteDomain.command";
+import { commandHandlers } from "@/infrastructure/di/container";
+import { CACHE_TAGS } from "@/lib/infrastructure/cache-tags";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
 export async function deleteDomain(
   domainId: number,
-): Promise<ActionResult<DeleteDomainResponse>> {
+): Promise<ActionResult<DeleteResult>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!domainId || domainId <= 0) {
       return {
@@ -20,15 +20,8 @@ export async function deleteDomain(
       };
     }
 
-    const useCase = new DeleteDomainUseCase(
-      repositories.domain,
-      repositories.category,
-    );
-
-    const result = await useCase.execute({
-      userId: user.id,
-      domainId,
-    });
+    const command = deleteDomainCommand(user.id, domainId);
+    const result = await commandHandlers.content.deleteDomain.execute(command);
 
     revalidatePath("/admin/domains");
     revalidatePath("/domains");

@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Domain } from "@/types/domain";
+import type { Domain } from "@/infrastructure/database/schema";
 
 interface DeleteDomainDialogProps {
   domain: Domain | null;

@@ -1,22 +1,16 @@
 "use server";
 
 import { unstable_cache } from "next/cache";
-import type { GetUserProgressResponse } from "@/application/use-cases/progress/GetUserProgressUseCase";
-import { GetUserProgressUseCase } from "@/application/use-cases/progress/GetUserProgressUseCase";
-import { repositories } from "@/infrastructure/di/container";
+import type { GetUserProgressResult } from "@/application/dtos/gamification.dto";
+import { queryHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
-
-const getUserProgressUseCase = new GetUserProgressUseCase(
-  repositories.userProgress,
-);
+import { getUserProgressQuery } from "@/queries/progress/GetUserProgress.query";
 
 const getCachedUserProgress = unstable_cache(
   async (userId: string, pathId: number) => {
-    return getUserProgressUseCase.execute({
-      userId,
-      pathId,
-    });
+    const query = getUserProgressQuery(userId, pathId);
+    return queryHandlers.progress.getUserProgress.execute(query);
   },
   ["user-progress"],
   {
@@ -26,7 +20,7 @@ const getCachedUserProgress = unstable_cache(
 
 export async function getUserProgress(
   pathId: number,
-): Promise<ActionResult<GetUserProgressResponse>> {
+): Promise<ActionResult<GetUserProgressResult>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!pathId || pathId <= 0) {
       return {

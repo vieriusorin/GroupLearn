@@ -1,12 +1,13 @@
 "use client";
 
-import type { LessonCardProps } from "@/types/lesson";
+import { RichTextDisplay } from "@/components/rich-text-editor";
+import type { LessonDisplayCardProps } from "@/presentation/types";
 
 export const LessonCard = ({
   title,
   content,
   variant = "question",
-}: LessonCardProps) => {
+}: LessonDisplayCardProps) => {
   const borderColor =
     variant === "answer" ? "border-green-500" : "border-primary";
   const titleColor =
@@ -21,10 +22,7 @@ export const LessonCard = ({
         >
           {title}
         </h2>
-        <div
-          className="prose dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: content }}
-        />
+        <RichTextDisplay content={content} className="dark:prose-invert" />
       </div>
     </section>
   );

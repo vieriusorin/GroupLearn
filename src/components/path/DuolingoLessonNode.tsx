@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import { Check, Lock, Play, Star } from "lucide-react";
 import { useState } from "react";
+import type { LessonWithProgress } from "@/application/dtos";
 import { Mascot } from "@/components/mascot/Mascot";
-import type { LessonWithProgress } from "@/lib/types";
 
 interface DuolingoLessonNodeProps {
   lesson: LessonWithProgress;
@@ -20,18 +20,18 @@ export function DuolingoLessonNode({
   onClick,
 }: DuolingoLessonNodeProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const { is_completed, is_unlocked, best_accuracy } = lesson;
+  const { isCompleted, isUnlocked, bestAccuracy } = lesson;
 
   // Determine node style
   const getNodeStyle = () => {
-    if (!is_unlocked) {
+    if (!isUnlocked) {
       return {
         bg: "bg-gray-300 dark:bg-gray-700",
         border: "border-gray-400 dark:border-gray-600",
         shadow: "shadow-md",
       };
     }
-    if (is_completed) {
+    if (isCompleted) {
       return {
         bg: "bg-gradient-to-b from-yellow-400 to-yellow-500",
         border: "border-yellow-600",
@@ -55,8 +55,8 @@ export function DuolingoLessonNode({
   };
 
   const getIcon = () => {
-    if (!is_unlocked) return <Lock className="w-8 h-8 text-white" />;
-    if (is_completed) return <Star className="w-8 h-8 text-white fill-white" />;
+    if (!isUnlocked) return <Lock className="w-8 h-8 text-white" />;
+    if (isCompleted) return <Star className="w-8 h-8 text-white fill-white" />;
     return <Play className="w-8 h-8 text-white fill-white" />;
   };
 
@@ -66,20 +66,21 @@ export function DuolingoLessonNode({
         className="relative"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        whileHover={is_unlocked ? { scale: 1.1 } : {}}
+        whileHover={isUnlocked ? { scale: 1.1 } : {}}
         animate={isCurrent ? { scale: [1, 1.05, 1] } : {}}
         transition={{ duration: 2, repeat: isCurrent ? Infinity : 0 }}
       >
         {/* Lesson Circle Button */}
         <button
-          onClick={is_unlocked ? onClick : undefined}
-          disabled={!is_unlocked}
+          type="button"
+          onClick={isUnlocked ? onClick : undefined}
+          disabled={!isUnlocked}
           className={`
             relative w-24 h-24 rounded-full border-b-8
             flex items-center justify-center
             transition-all duration-200
             ${style.bg} ${style.border} ${style.shadow}
-            ${is_unlocked ? "cursor-pointer hover:brightness-110" : "cursor-not-allowed opacity-70"}
+            ${isUnlocked ? "cursor-pointer hover:brightness-110" : "cursor-not-allowed opacity-70"}
             ${isCurrent ? "ring-4 ring-white ring-offset-4 ring-offset-background" : ""}
           `}
         >
@@ -87,14 +88,14 @@ export function DuolingoLessonNode({
         </button>
 
         {/* Completion Badge */}
-        {is_completed && best_accuracy !== null && best_accuracy === 100 && (
+        {isCompleted && bestAccuracy !== null && bestAccuracy === 100 && (
           <div className="absolute -top-2 -right-2 w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full border-4 border-white dark:border-gray-900 flex items-center justify-center shadow-lg">
             <Check className="w-5 h-5 text-white" />
           </div>
         )}
 
         {/* Hover Tooltip */}
-        {isHovered && is_unlocked && (
+        {isHovered && isUnlocked && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -108,11 +109,11 @@ export function DuolingoLessonNode({
             )}
             <div className="flex items-center gap-2 mt-2">
               <span className="text-xs text-amber-300">
-                ⚡ {lesson.xp_reward} XP
+                ⚡ {lesson.xpReward} XP
               </span>
-              {best_accuracy !== null && (
+              {bestAccuracy !== null && (
                 <span className="text-xs text-green-300">
-                  ✓ {best_accuracy}%
+                  ✓ {bestAccuracy}%
                 </span>
               )}
             </div>

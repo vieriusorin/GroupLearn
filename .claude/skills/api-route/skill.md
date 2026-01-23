@@ -1,11 +1,11 @@
 ---
 name: api-route
-description: Create Next.js API routes with authentication, RBAC, and error handling
+description: Create Next.js API routes with Better Auth, RBAC, and error handling using Drizzle ORM
 allowed-tools: [Write, Read, Edit, Bash]
 ---
 
 ## Purpose
-Generate Next.js 16 API routes following project conventions for authentication, authorization, error handling, and database operations.
+Generate Next.js 16 API routes following project conventions for Better Auth authentication, authorization, error handling, and Drizzle ORM database operations.
 
 ## Guidelines
 
@@ -15,12 +15,12 @@ Location: `src/app/api/<resource>/route.ts`
 ### 2. Standard Template
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { auth } from '@/lib/auth';
 import { z } from 'zod';
-import { getDb } from '@/lib/db';
+import { db } from '@/infrastructure/database/drizzle';
+import { resourceTable } from '@/infrastructure/database/schema';
+import { eq, and } from 'drizzle-orm';
 import { hasPermission } from '@/lib/rbac';
-import { errorResponse, successResponse } from '@/lib/api-utils';
 
 // Request validation schema
 const RequestSchema = z.object({
@@ -31,45 +31,48 @@ const RequestSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     // 1. Authentication check
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
-      return errorResponse('Unauthorized', 401);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // 2. Authorization check (if needed)
     if (!hasPermission(session.user.role, 'resource:read')) {
-      return errorResponse('Forbidden', 403);
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // 3. Parse query params
     const { searchParams } = new URL(request.url);
     const paramValue = searchParams.get('param');
 
-    // 4. Database operations
-    const db = getDb();
-    const results = db.prepare(`
-      SELECT * FROM table WHERE condition = ?
-    `).all(paramValue);
+    // 4. Database operations with Drizzle
+    const results = await db
+      .select()
+      .from(resourceTable)
+      .where(eq(resourceTable.userId, session.user.id));
 
     // 5. Return success response
-    return successResponse(results);
+    return NextResponse.json({ data: results }, { status: 200 });
   } catch (error) {
     console.error('GET /api/resource error:', error);
-    return errorResponse('Internal server error', 500);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     // 1. Authentication
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
-      return errorResponse('Unauthorized', 401);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // 2. Authorization
     if (!hasPermission(session.user.role, 'resource:create')) {
-      return errorResponse('Forbidden', 403);
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // 3. Validate request body
@@ -77,131 +80,162 @@ export async function POST(request: NextRequest) {
     const validationResult = RequestSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return errorResponse(
-        'Validation failed',
-        400,
-        validationResult.error.errors
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          details: validationResult.error.errors,
+        },
+        { status: 400 }
       );
     }
 
     const data = validationResult.data;
 
-    // 4. Database operation
-    const db = getDb();
-    const stmt = db.prepare(`
-      INSERT INTO table (field, user_id) VALUES (?, ?)
-    `);
-    const result = stmt.run(data.field, session.user.id);
+    // 4. Database operation with Drizzle
+    const [newResource] = await db
+      .insert(resourceTable)
+      .values({
+        field: data.field,
+        userId: session.user.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
 
     // 5. Return created resource
-    return successResponse(
-      { id: result.lastInsertRowid, ...data },
-      201
-    );
+    return NextResponse.json({ data: newResource }, { status: 201 });
   } catch (error) {
     console.error('POST /api/resource error:', error);
-    return errorResponse('Internal server error', 500);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
-      return errorResponse('Unauthorized', 401);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
     const { id, ...updates } = body;
 
     // Verify ownership or admin
-    const db = getDb();
-    const resource = db.prepare(`
-      SELECT user_id FROM table WHERE id = ?
-    `).get(id) as { user_id: number } | undefined;
+    const [resource] = await db
+      .select()
+      .from(resourceTable)
+      .where(eq(resourceTable.id, id))
+      .limit(1);
 
     if (!resource) {
-      return errorResponse('Resource not found', 404);
+      return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
     }
 
-    const isOwner = resource.user_id === Number(session.user.id);
+    const isOwner = resource.userId === session.user.id;
     const isAdmin = session.user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
-      return errorResponse('Forbidden', 403);
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Update resource
-    const updateStmt = db.prepare(`
-      UPDATE table SET field = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `);
-    updateStmt.run(updates.field, id);
+    const [updated] = await db
+      .update(resourceTable)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(resourceTable.id, id))
+      .returning();
 
-    return successResponse({ id, ...updates });
+    return NextResponse.json({ data: updated }, { status: 200 });
   } catch (error) {
     console.error('PATCH /api/resource error:', error);
-    return errorResponse('Internal server error', 500);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
-      return errorResponse('Unauthorized', 401);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return errorResponse('Missing resource ID', 400);
+      return NextResponse.json(
+        { error: 'Missing resource ID' },
+        { status: 400 }
+      );
     }
 
     // Check ownership/authorization
-    const db = getDb();
-    const resource = db.prepare(`
-      SELECT user_id FROM table WHERE id = ?
-    `).get(id) as { user_id: number } | undefined;
+    const [resource] = await db
+      .select()
+      .from(resourceTable)
+      .where(eq(resourceTable.id, id))
+      .limit(1);
 
     if (!resource) {
-      return errorResponse('Resource not found', 404);
+      return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
     }
 
-    const isOwner = resource.user_id === Number(session.user.id);
+    const isOwner = resource.userId === session.user.id;
     const isAdmin = session.user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
-      return errorResponse('Forbidden', 403);
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Delete resource
-    db.prepare(`DELETE FROM table WHERE id = ?`).run(id);
+    await db.delete(resourceTable).where(eq(resourceTable.id, id));
 
-    return successResponse({ message: 'Deleted successfully' });
+    return NextResponse.json(
+      { message: 'Deleted successfully' },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('DELETE /api/resource error:', error);
-    return errorResponse('Internal server error', 500);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 ```
 
-### 3. Authentication Patterns
+### 3. Authentication Patterns (Better Auth)
 
 **Require authentication:**
 ```typescript
-const session = await getServerSession(authOptions);
+import { auth } from '@/lib/auth';
+
+const session = await auth();
 if (!session?.user?.id) {
-  return errorResponse('Unauthorized', 401);
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 }
 ```
 
 **Optional authentication:**
 ```typescript
-const session = await getServerSession(authOptions);
+const session = await auth();
 const userId = session?.user?.id;
 // Proceed with optional user context
+```
+
+**Access user info:**
+```typescript
+const session = await auth();
+const { id, email, name, role, subscriptionStatus } = session.user;
 ```
 
 ### 4. Authorization Patterns
@@ -211,30 +245,43 @@ const userId = session?.user?.id;
 import { hasPermission } from '@/lib/rbac';
 
 if (!hasPermission(session.user.role, 'resource:action')) {
-  return errorResponse('Forbidden', 403);
+  return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 }
 ```
 
 **Ownership-based:**
 ```typescript
-const resource = db.prepare('SELECT user_id FROM table WHERE id = ?').get(id);
-const isOwner = resource.user_id === Number(session.user.id);
+const [resource] = await db
+  .select()
+  .from(resourceTable)
+  .where(eq(resourceTable.id, id))
+  .limit(1);
+
+const isOwner = resource.userId === session.user.id;
 const isAdmin = session.user.role === 'admin';
 
 if (!isOwner && !isAdmin) {
-  return errorResponse('Forbidden', 403);
+  return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 }
 ```
 
 **Group-based:**
 ```typescript
-const membership = db.prepare(`
-  SELECT role FROM group_members
-  WHERE group_id = ? AND user_id = ?
-`).get(groupId, session.user.id);
+import { groupMembers } from '@/infrastructure/database/schema';
+
+const [membership] = await db
+  .select()
+  .from(groupMembers)
+  .where(
+    and(
+      eq(groupMembers.groupId, groupId),
+      eq(groupMembers.userId, session.user.id)
+    )
+  )
+  .limit(1);
 
 if (!membership || !['admin', 'owner'].includes(membership.role)) {
-  return errorResponse('Forbidden', 403);
+  return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 }
 ```
 
@@ -251,50 +298,101 @@ const Schema = z.object({
 
 const result = Schema.safeParse(body);
 if (!result.success) {
-  return errorResponse('Validation failed', 400, result.error.errors);
+  return NextResponse.json(
+    {
+      error: 'Validation failed',
+      details: result.error.errors,
+    },
+    { status: 400 }
+  );
 }
 ```
 
 ### 6. Error Handling
 ```typescript
-import { errorResponse, successResponse } from '@/lib/api-utils';
+// Success responses
+return NextResponse.json({ data: result }, { status: 200 });
+return NextResponse.json({ data: result }, { status: 201 }); // Created
 
-// Success
-return successResponse(data);
-return successResponse(data, 201); // Created
-
-// Errors
-return errorResponse('Message', 400); // Bad Request
-return errorResponse('Unauthorized', 401);
-return errorResponse('Forbidden', 403);
-return errorResponse('Not Found', 404);
-return errorResponse('Internal Server Error', 500);
+// Error responses
+return NextResponse.json({ error: 'Message' }, { status: 400 }); // Bad Request
+return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 ```
 
-### 7. Database Patterns
+### 7. Drizzle ORM Database Patterns
 
 **Read operations:**
 ```typescript
-const db = getDb();
-const rows = db.prepare('SELECT * FROM table WHERE condition = ?').all(value);
-const row = db.prepare('SELECT * FROM table WHERE id = ?').get(id);
+import { db } from '@/infrastructure/database/drizzle';
+import { users, posts } from '@/infrastructure/database/schema';
+import { eq, and, or, like, gte, desc } from 'drizzle-orm';
+
+// Select all
+const allUsers = await db.select().from(users);
+
+// Select with condition
+const user = await db.select().from(users).where(eq(users.id, userId));
+
+// Select with multiple conditions
+const results = await db
+  .select()
+  .from(posts)
+  .where(
+    and(
+      eq(posts.userId, userId),
+      gte(posts.createdAt, new Date('2024-01-01'))
+    )
+  )
+  .orderBy(desc(posts.createdAt));
+
+// Select specific fields
+const userEmails = await db
+  .select({ email: users.email, name: users.name })
+  .from(users);
+
+// Joins
+const postsWithUsers = await db
+  .select()
+  .from(posts)
+  .leftJoin(users, eq(posts.userId, users.id));
 ```
 
 **Write operations:**
 ```typescript
-const stmt = db.prepare('INSERT INTO table (field) VALUES (?)');
-const result = stmt.run(value);
-const newId = result.lastInsertRowid;
+// Insert single record
+const [newUser] = await db
+  .insert(users)
+  .values({
+    email: 'test@example.com',
+    name: 'Test User',
+  })
+  .returning();
+
+// Insert multiple records
+await db.insert(posts).values([
+  { title: 'Post 1', userId: '123' },
+  { title: 'Post 2', userId: '123' },
+]);
+
+// Update
+await db
+  .update(users)
+  .set({ name: 'New Name', updatedAt: new Date() })
+  .where(eq(users.id, userId));
+
+// Delete
+await db.delete(users).where(eq(users.id, userId));
 ```
 
 **Transactions:**
 ```typescript
-const db = getDb();
-const transaction = db.transaction(() => {
-  db.prepare('INSERT INTO table1 (field) VALUES (?)').run(value);
-  db.prepare('UPDATE table2 SET field = ? WHERE id = ?').run(value, id);
+await db.transaction(async (tx) => {
+  const [user] = await tx.insert(users).values({ ... }).returning();
+  await tx.insert(profiles).values({ userId: user.id, ... });
 });
-transaction();
 ```
 
 ### 8. Dynamic Routes
@@ -306,18 +404,26 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  // Use id...
+  // Use id in your queries
+  const [resource] = await db
+    .select()
+    .from(resourceTable)
+    .where(eq(resourceTable.id, id))
+    .limit(1);
 }
 ```
 
 ## Best Practices
 - ✅ Always validate input with Zod
 - ✅ Check authentication before authorization
-- ✅ Use prepared statements to prevent SQL injection
+- ✅ Use Drizzle's query builder for type-safe queries
 - ✅ Log errors with context
 - ✅ Return appropriate HTTP status codes
-- ✅ Close database connections (handled by getDb())
 - ✅ Use transactions for multi-step operations
+- ✅ Use `.returning()` to get inserted/updated data
+- ✅ Use `.limit(1)` when selecting single records
+- ✅ Import operators (eq, and, or, etc.) from 'drizzle-orm'
 - ⚠️ Never trust user input
 - ⚠️ Always check ownership before modifications
 - ⚠️ Sanitize error messages sent to client
+- ⚠️ Handle database connection errors gracefully

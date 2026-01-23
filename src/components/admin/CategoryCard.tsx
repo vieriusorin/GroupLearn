@@ -3,27 +3,28 @@
 import { FolderOpen, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import type { CategoryCardProps } from "@/types/category";
+import type { CategoryCardProps } from "@/presentation/types";
 
-export function CategoryCard({
+export const CategoryCard = ({
   category,
   onEdit,
   onDelete,
   isDeleting = false,
   dragHandleProps,
-}: CategoryCardProps) {
+}: CategoryCardProps) => {
   return (
     <Card className="border-2 hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         {/* Drag Handle */}
         {dragHandleProps && (
-          <div
+          <button
+            type="button"
             {...dragHandleProps}
             className="flex justify-center mb-2 -mt-2 py-1"
             aria-label="Drag to reorder"
           >
             <GripVertical className="h-5 w-5 text-muted-foreground/50 hover:text-muted-foreground transition-colors" />
-          </div>
+          </button>
         )}
 
         <div className="flex items-start justify-between mb-4">
@@ -44,13 +45,15 @@ export function CategoryCard({
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Flashcards:</span>
             <span className="font-semibold">
-              {category.flashcard_count || 0}
+              {category.flashcardCount || 0}
             </span>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Order:</span>
-            <span className="font-semibold">#{category.display_order}</span>
-          </div>
+          {category.displayOrder !== undefined ? (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Order:</span>
+              <span className="font-semibold">#{category.displayOrder}</span>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-2 pt-4 border-t">
@@ -78,4 +81,4 @@ export function CategoryCard({
       </CardContent>
     </Card>
   );
-}
+};

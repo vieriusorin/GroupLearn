@@ -1,14 +1,17 @@
 "use server";
 
-import type { DeleteCategoryResponse } from "@/application/use-cases/content/DeleteCategoryUseCase";
-import { DeleteCategoryUseCase } from "@/application/use-cases/content/DeleteCategoryUseCase";
-import { repositories } from "@/infrastructure/di/container";
+import { revalidatePath, revalidateTag } from "next/cache";
+import type { DeleteResult } from "@/application/dtos/content.dto";
+import { deleteCategoryCommand } from "@/commands/content/DeleteCategory.command";
+import { commandHandlers, queryHandlers } from "@/infrastructure/di/container";
+import { CACHE_TAGS } from "@/lib/infrastructure/cache-tags";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getCategoryByIdQuery } from "@/queries/content/GetCategoryById.query";
 
 export async function deleteCategory(
   categoryId: number,
-): Promise<ActionResult<DeleteCategoryResponse>> {
+): Promise<ActionResult<DeleteResult>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!categoryId || categoryId <= 0) {
       return {
@@ -18,15 +21,25 @@ export async function deleteCategory(
       };
     }
 
-    const useCase = new DeleteCategoryUseCase(
-      repositories.category,
-      repositories.flashcard,
-    );
+    // Get category first to get domainId for cache invalidation
+    const categoryQuery = getCategoryByIdQuery(categoryId);
+    const category =
+      await queryHandlers.content.getCategoryById.execute(categoryQuery);
+    const domainId = category?.domainId;
 
-    const result = await useCase.execute({
-      userId: user.id,
-      categoryId,
-    });
+    const command = deleteCategoryCommand(user.id, categoryId);
+    const result =
+      await commandHandlers.content.deleteCategory.execute(command);
+
+    // Revalidate paths
+    revalidatePath("/admin/categories");
+    revalidatePath("/admin/flashcards");
+
+    // Revalidate cache tags
+    if (domainId) {
+      revalidateTag(CACHE_TAGS.categories(domainId));
+    }
+    revalidateTag(CACHE_TAGS.categoriesAll);
 
     return {
       success: true,

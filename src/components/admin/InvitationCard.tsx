@@ -22,12 +22,12 @@ export const InvitationCard = ({
         </div>
         <div className="text-xs text-muted-foreground mt-1">
           Invited{" "}
-          <time dateTime={invitation.created_at}>
-            {new Date(invitation.created_at).toLocaleDateString()}
+          <time dateTime={invitation.createdAt}>
+            {new Date(invitation.createdAt).toLocaleDateString()}
           </time>{" "}
           • Expires{" "}
-          <time dateTime={invitation.expires_at}>
-            {new Date(invitation.expires_at).toLocaleDateString()}
+          <time dateTime={invitation.expiresAt}>
+            {new Date(invitation.expiresAt).toLocaleDateString()}
           </time>
         </div>
       </div>
@@ -40,7 +40,6 @@ export const InvitationCard = ({
                 ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                 : "bg-muted text-muted-foreground"
           }`}
-          aria-label={`Invitation status: ${invitation.status}`}
         >
           {invitation.status}
         </span>

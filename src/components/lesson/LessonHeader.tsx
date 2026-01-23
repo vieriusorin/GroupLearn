@@ -4,7 +4,7 @@ import { HeartsDisplay } from "@/components/gamification/HeartsDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type { LessonHeaderProps } from "@/types/lesson";
+import type { LessonHeaderProps } from "@/presentation/types";
 
 export const LessonHeader = ({
   currentCardIndex,

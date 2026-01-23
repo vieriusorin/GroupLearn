@@ -3,6 +3,7 @@
 import Placeholder from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import DOMPurify from "dompurify";
 import { useEffect } from "react";
 
 interface RichTextEditorProps {
@@ -189,11 +190,42 @@ export function RichTextEditor({
   );
 }
 
-export function RichTextDisplay({ content }: { content: string }) {
+export function RichTextDisplay({
+  content,
+  className = "",
+}: {
+  content: string;
+  className?: string;
+}) {
+  const sanitizedContent = DOMPurify.sanitize(content, {
+    ALLOWED_TAGS: [
+      "p",
+      "br",
+      "strong",
+      "em",
+      "u",
+      "s",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "ul",
+      "ol",
+      "li",
+      "blockquote",
+      "code",
+      "pre",
+    ],
+    ALLOWED_ATTR: [],
+  });
+
   return (
     <div
-      className="prose prose-sm max-w-none"
-      dangerouslySetInnerHTML={{ __html: content }}
+      className={`prose prose-sm max-w-none ${className}`}
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: Content is sanitized with DOMPurify
+      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
     />
   );
 }

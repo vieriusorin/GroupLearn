@@ -1,3 +1,4 @@
+import type { FlashcardAdmin } from "@/application/dtos";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RichTextDisplay } from "@/components/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
@@ -9,13 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { AdminFlashcard } from "@/lib/types";
 
 type Props = {
   isLoading: boolean;
-  flashcards: AdminFlashcard[];
-  onEdit: (card: AdminFlashcard) => void;
-  onDelete: (card: AdminFlashcard) => void;
+  flashcards: FlashcardAdmin[];
+  onEdit: (card: FlashcardAdmin) => void;
+  onDelete: (card: FlashcardAdmin) => void;
   isDeleting: boolean;
 };
 

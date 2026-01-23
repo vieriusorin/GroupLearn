@@ -26,26 +26,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthSession } from "@/hooks/auth/useAuthSession";
-import { authClient } from "@/lib/better-auth-client";
-import { calculateAvailableHearts } from "@/lib/gamification";
-import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth/better-auth-client";
+import { calculateAvailableHearts } from "@/lib/gamification/gamification";
+import { cn } from "@/lib/shared/utils";
 import { getPaths } from "@/presentation/actions/paths/get-paths";
 import { getUserProgress } from "@/presentation/actions/progress/get-user-progress";
 
 interface ProgressData {
-  path_id: number;
-  current_unit_id: number | null;
-  current_lesson_id: number | null;
-  total_xp: number;
+  pathId: number;
+  currentUnitId: number | null;
+  currentLessonId: number | null;
+  totalXp: number;
   hearts: number;
-  next_heart_refill_minutes: number;
-  streak_count: number;
-  last_activity_date: string | null;
-  completion_percent: number;
-  units_completed: number;
-  total_units: number;
-  lessons_completed: number;
-  total_lessons: number;
+  nextHeartRefillMinutes: number;
+  streakCount: number;
+  lastActivityDate: string | null;
+  completionPercent: number;
+  unitsCompleted: number;
+  totalUnits: number;
+  lessonsCompleted: number;
+  totalLessons: number;
 }
 
 export function TopBar() {
@@ -87,19 +87,19 @@ export function TopBar() {
 
           // Map to ProgressData format
           setProgressData({
-            path_id: progress.pathId,
-            current_unit_id: progress.currentUnitId,
-            current_lesson_id: progress.currentLessonId,
-            total_xp: progress.totalXP,
+            pathId: progress.pathId,
+            currentUnitId: progress.currentUnitId,
+            currentLessonId: progress.currentLessonId,
+            totalXp: progress.totalXP,
             hearts,
-            next_heart_refill_minutes: nextRefillMinutes,
-            streak_count: progress.streakCount,
-            last_activity_date: progress.lastActivityDate,
-            completion_percent: 0, // Not available from GetUserProgressResponse
-            units_completed: 0, // Not available from GetUserProgressResponse
-            total_units: 0, // Not available from GetUserProgressResponse
-            lessons_completed: 0, // Not available from GetUserProgressResponse
-            total_lessons: 0, // Not available from GetUserProgressResponse
+            nextHeartRefillMinutes: nextRefillMinutes,
+            streakCount: progress.streakCount,
+            lastActivityDate: progress.lastActivityDate,
+            completionPercent: 0, // Not available from GetUserProgressResponse
+            unitsCompleted: 0, // Not available from GetUserProgressResponse
+            totalUnits: 0, // Not available from GetUserProgressResponse
+            lessonsCompleted: 0, // Not available from GetUserProgressResponse
+            totalLessons: 0, // Not available from GetUserProgressResponse
           });
         } catch (error) {
           console.error("Failed to fetch progress for TopBar:", error);
@@ -158,16 +158,16 @@ export function TopBar() {
             <>
               <div className="hidden lg:block w-32">
                 <XPProgressBar
-                  currentXP={progressData.total_xp % 100}
+                  currentXP={progressData.totalXp % 100}
                   goalXP={100}
                 />
               </div>
               <HeartsDisplay
                 currentHearts={progressData.hearts}
                 maxHearts={5}
-                nextRefillMinutes={progressData.next_heart_refill_minutes}
+                nextRefillMinutes={progressData.nextHeartRefillMinutes}
               />
-              <StreakDisplay streakCount={progressData.streak_count} />
+              <StreakDisplay streakCount={progressData.streakCount} />
             </>
           )}
 

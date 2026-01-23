@@ -10,12 +10,12 @@ interface AnalyticsHeaderProps {
   backLabel?: string;
 }
 
-export function AnalyticsHeader({
+export const AnalyticsHeader = ({
   title,
   description,
   backHref,
   backLabel = "← Back",
-}: AnalyticsHeaderProps) {
+}: AnalyticsHeaderProps) => {
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -26,9 +26,9 @@ export function AnalyticsHeader({
             </Button>
           </Link>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-        <p className="text-gray-600 mt-1">{description}</p>
+        <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+        <p className="mt-1 text-muted-foreground">{description}</p>
       </div>
     </div>
   );
-}
+};

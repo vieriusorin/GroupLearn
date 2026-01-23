@@ -1,27 +1,16 @@
 "use server";
 
-import {
-  getLessonById,
-  getUnitById,
-} from "@/lib/db-operations-paths-critical-converted";
+import type { GetLessonInfoResult } from "@/application/dtos/learning-path.dto";
+import { queryHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getLessonByIdQuery } from "@/queries/paths/GetLessonById.query";
+import { getUnitByIdQuery } from "@/queries/paths/GetUnitById.query";
 
-/**
- * Server Action: Get lesson info including pathId
- *
- * @param lessonId - The lesson ID
- * @returns ActionResult with lesson info including pathId or error
- */
-export async function getLessonInfo(lessonId: number): Promise<
-  ActionResult<{
-    lessonId: number;
-    unitId: number;
-    pathId: number;
-  }>
-> {
+export async function getLessonInfo(
+  lessonId: number,
+): Promise<ActionResult<GetLessonInfoResult>> {
   return withAuth(["admin", "member"], async () => {
-    // Validate input
     if (!lessonId || lessonId <= 0) {
       return {
         success: false,
@@ -31,9 +20,11 @@ export async function getLessonInfo(lessonId: number): Promise<
     }
 
     try {
-      // Get lesson to find unit ID
-      const lesson = await getLessonById(lessonId);
-      if (!lesson) {
+      const lessonQuery = getLessonByIdQuery(lessonId);
+      const lessonResult =
+        await queryHandlers.paths.getLessonById.execute(lessonQuery);
+
+      if (!lessonResult.lesson) {
         return {
           success: false,
           error: "Lesson not found",
@@ -41,9 +32,11 @@ export async function getLessonInfo(lessonId: number): Promise<
         };
       }
 
-      // Get unit to find path ID
-      const unit = await getUnitById(lesson.unit_id);
-      if (!unit) {
+      const unitQuery = getUnitByIdQuery(lessonResult.lesson.unitId);
+      const unitResult =
+        await queryHandlers.paths.getUnitById.execute(unitQuery);
+
+      if (!unitResult.unit) {
         return {
           success: false,
           error: "Unit not found",
@@ -54,9 +47,9 @@ export async function getLessonInfo(lessonId: number): Promise<
       return {
         success: true,
         data: {
-          lessonId: lesson.id,
-          unitId: lesson.unit_id,
-          pathId: unit.path_id,
+          lessonId: lessonResult.lesson.id,
+          unitId: lessonResult.lesson.unitId,
+          pathId: unitResult.unit.pathId,
         },
       };
     } catch (error) {

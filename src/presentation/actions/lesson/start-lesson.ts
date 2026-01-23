@@ -1,38 +1,20 @@
 "use server";
 
-import type { StartLessonResponse } from "@/application/use-cases/lesson/StartLessonUseCase";
-import { StartLessonUseCase } from "@/application/use-cases/lesson/StartLessonUseCase";
-import { repositories } from "@/infrastructure/di/container";
-import { canAccessPath } from "@/lib/authorization";
-import {
-  getLessonById,
-  getPathById,
-  getUnitById,
-} from "@/lib/db-operations-paths-critical-converted";
-import { isLessonUnlocked } from "@/lib/unlock-system";
+import type { StartLessonResponse } from "@/application/dtos/learning-path.dto";
+import { startLessonCommand } from "@/commands/lesson/StartLesson.command";
+import { commandHandlers, queryHandlers } from "@/infrastructure/di/container";
+import { canAccessPath } from "@/lib/auth/authorization";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getLessonByIdQuery } from "@/queries/paths/GetLessonById.query";
+import { getPathByIdQuery } from "@/queries/paths/GetPathById.query";
+import { getUnitByIdQuery } from "@/queries/paths/GetUnitById.query";
+import { isLessonUnlockedQuery } from "@/queries/paths/IsLessonUnlocked.query";
 
-/**
- * Server Action: Start a lesson
- *
- * @param lessonId - The lesson ID to start
- * @returns ActionResult with session data or error
- */
-export async function startLesson(lessonId: number): Promise<
-  ActionResult<{
-    lesson: StartLessonResponse["lesson"];
-    unit: StartLessonResponse["unit"];
-    path: StartLessonResponse["path"];
-    flashcards: StartLessonResponse["flashcards"];
-    hearts_available: number;
-    review_mode: "flashcard" | "quiz" | "recall";
-    total_flashcards: number;
-    xp_reward: number;
-  }>
-> {
+export async function startLesson(
+  lessonId: number,
+): Promise<ActionResult<StartLessonResponse>> {
   return withAuth(["admin", "member"], async (user) => {
-    // Validate input
     if (!lessonId || lessonId <= 0) {
       return {
         success: false,
@@ -41,9 +23,11 @@ export async function startLesson(lessonId: number): Promise<
       };
     }
 
-    // Get lesson to find path ID
-    const lesson = await getLessonById(lessonId);
-    if (!lesson) {
+    const lessonQuery = getLessonByIdQuery(lessonId);
+    const lessonResult =
+      await queryHandlers.paths.getLessonById.execute(lessonQuery);
+
+    if (!lessonResult.lesson) {
       return {
         success: false,
         error: "Lesson not found",
@@ -51,8 +35,12 @@ export async function startLesson(lessonId: number): Promise<
       };
     }
 
-    // Check if lesson is unlocked
-    if (!(await isLessonUnlocked(lessonId, user.id))) {
+    const lesson = lessonResult.lesson;
+
+    const isUnlocked = await queryHandlers.paths.isLessonUnlocked.execute(
+      isLessonUnlockedQuery(lessonId, user.id),
+    );
+    if (!isUnlocked) {
       return {
         success: false,
         error: "Lesson is locked. Complete previous lessons first.",
@@ -60,9 +48,10 @@ export async function startLesson(lessonId: number): Promise<
       };
     }
 
-    // Get unit and path info
-    const unit = await getUnitById(lesson.unit_id);
-    if (!unit) {
+    const unitQuery = getUnitByIdQuery(lesson.unitId);
+    const unitResult = await queryHandlers.paths.getUnitById.execute(unitQuery);
+
+    if (!unitResult.unit) {
       return {
         success: false,
         error: "Unit not found",
@@ -70,8 +59,12 @@ export async function startLesson(lessonId: number): Promise<
       };
     }
 
-    const path = await getPathById(unit.path_id);
-    if (!path) {
+    const unit = unitResult.unit;
+
+    const pathQuery = getPathByIdQuery(unit.pathId);
+    const pathResult = await queryHandlers.paths.getPathById.execute(pathQuery);
+
+    if (!pathResult.path) {
       return {
         success: false,
         error: "Path not found",
@@ -79,7 +72,8 @@ export async function startLesson(lessonId: number): Promise<
       };
     }
 
-    // Check if user has access to this path
+    const path = pathResult.path;
+
     const hasAccess = await canAccessPath(path.id);
     if (!hasAccess) {
       return {
@@ -89,66 +83,90 @@ export async function startLesson(lessonId: number): Promise<
       };
     }
 
-    // Execute use case
-    const useCase = new StartLessonUseCase(
-      repositories.lesson,
-      repositories.session,
-      repositories.userProgress,
-    );
-
-    const result = await useCase.execute({
-      userId: user.id,
+    const command = startLessonCommand(
+      user.id,
       lessonId,
-      pathId: path.id,
-      lesson: {
+      path.id,
+      {
         id: lesson.id,
-        unit_id: lesson.unit_id,
+        unitId: lesson.unitId,
         name: lesson.name,
         description: lesson.description,
-        order_index: lesson.order_index,
-        xp_reward: lesson.xp_reward,
-        flashcard_count: lesson.flashcard_count,
-        created_at: lesson.created_at,
+        orderIndex: lesson.orderIndex,
+        xpReward: lesson.xpReward,
+        flashcardCount: lesson.flashcardCount,
+        createdAt:
+          lesson.createdAt instanceof Date
+            ? lesson.createdAt.toISOString()
+            : typeof lesson.createdAt === "string"
+              ? lesson.createdAt
+              : new Date().toISOString(),
       },
-      unit: {
+      {
         id: unit.id,
-        path_id: unit.path_id,
+        pathId: unit.pathId,
         name: unit.name,
         description: unit.description,
-        unit_number: unit.unit_number,
-        order_index: unit.order_index,
-        xp_reward: unit.xp_reward,
-        created_at: unit.created_at || new Date().toISOString(),
+        unitNumber: unit.unitNumber,
+        orderIndex: unit.orderIndex,
+        xpReward: unit.xpReward,
+        createdAt:
+          unit.createdAt instanceof Date
+            ? unit.createdAt.toISOString()
+            : typeof unit.createdAt === "string"
+              ? unit.createdAt
+              : new Date().toISOString(),
       },
-      path: {
+      {
         id: path.id,
-        domain_id: path.domain_id,
+        domainId: path.domainId,
         name: path.name,
         description: path.description,
         icon: path.icon,
-        order_index: path.order_index,
-        is_locked: path.is_locked,
-        unlock_requirement_type: path.unlock_requirement_type,
-        unlock_requirement_value: path.unlock_requirement_value,
+        orderIndex: path.orderIndex,
+        isLocked: path.isLocked,
+        unlockRequirementType: path.unlockRequirementType,
+        unlockRequirementValue: path.unlockRequirementValue,
         visibility: path.visibility,
-        created_by: path.created_by,
-        created_at: path.created_at,
+        createdBy: path.createdBy,
+        createdAt:
+          path.createdAt instanceof Date
+            ? path.createdAt.toISOString()
+            : typeof path.createdAt === "string"
+              ? path.createdAt
+              : new Date().toISOString(),
       },
-    });
+    );
 
-    // Return success - map to client-expected format
+    const result = await commandHandlers.lesson.startLesson.execute(command);
+
+    const response: StartLessonResponse = {
+      lesson: result.lesson,
+      unit: result.unit,
+      path: result.path,
+      flashcards: result.flashcards.map((f) => ({
+        id: f.id,
+        categoryId: f.categoryId,
+        question: f.question,
+        answer: f.answer,
+        difficulty: f.difficulty as "easy" | "medium" | "hard",
+        createdAt: f.createdAt,
+        computedDifficulty: null,
+      })),
+      heartsAvailable: result.heartsAvailable,
+      reviewMode:
+        result.reviewMode === "flashcard"
+          ? "learn"
+          : result.reviewMode === "quiz"
+            ? "review"
+            : "cram",
+      totalFlashcards: result.flashcards.length,
+      xpReward: result.lesson.xpReward,
+    };
+
     return {
       success: true,
-      data: {
-        lesson: result.lesson,
-        unit: result.unit,
-        path: result.path,
-        flashcards: result.flashcards,
-        hearts_available: result.hearts_available,
-        review_mode: result.review_mode,
-        total_flashcards: result.flashcards.length,
-        xp_reward: result.lesson.xp_reward,
-      },
+      data: response,
     };
   });
 }

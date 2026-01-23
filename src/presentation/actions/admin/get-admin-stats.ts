@@ -1,20 +1,22 @@
 "use server";
 
-import { AdminStatsRepository } from "@/lib/repositories/admin-stats.repository";
+import type { GetAdminStatsResult } from "@/application/dtos/admin.dto";
+import { queryHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
-import type { AdminDashboardData } from "@/types/admin";
+import { getAdminStatsQuery } from "@/queries/admin/GetAdminStats.query";
 
 export async function getAdminStats(): Promise<
-  ActionResult<AdminDashboardData>
+  ActionResult<GetAdminStatsResult>
 > {
   return withAuth(["admin"], async (_user) => {
     try {
-      const dashboardData = await AdminStatsRepository.getDashboardData();
+      const query = getAdminStatsQuery();
+      const result = await queryHandlers.admin.getAdminStats.execute(query);
 
       return {
         success: true,
-        data: dashboardData,
+        data: result,
       };
     } catch (error) {
       return {

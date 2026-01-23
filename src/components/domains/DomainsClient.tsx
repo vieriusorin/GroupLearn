@@ -295,9 +295,10 @@ export function DomainsClient({ initialDomains }: Props) {
               </p>
             ) : (
               optimisticDomains.map((domain) => (
-                <div
+                <button
                   key={domain.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-accent ${
+                  type="button"
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-accent w-full text-left ${
                     selectedDomainId === domain.id
                       ? "bg-accent border-primary"
                       : ""
@@ -321,11 +322,12 @@ export function DomainsClient({ initialDomains }: Props) {
                         handleDeleteDomain(domain.id);
                       }}
                       disabled={isPending}
+                      type="button"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
+                </button>
               ))
             )}
           </CardContent>

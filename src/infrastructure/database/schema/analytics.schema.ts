@@ -1,9 +1,3 @@
-/**
- * Analytics & Activity Tracking Schema (PostgreSQL)
- *
- * Tables for user activity logs and group member analytics.
- */
-
 import {
   integer,
   pgTable,
@@ -16,10 +10,6 @@ import {
 import { users } from "./auth.schema";
 import { ActivityType } from "./enums";
 import { groups } from "./groups.schema";
-
-// ============================================
-// User Activity Log Table
-// ============================================
 
 export const userActivityLog = pgTable("user_activity_log", {
   id: serial("id").primaryKey(),
@@ -46,10 +36,6 @@ export const userActivityLog = pgTable("user_activity_log", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// ============================================
-// Group Member Analytics Table
-// ============================================
-
 export const groupMemberAnalytics = pgTable("group_member_analytics", {
   id: serial("id").primaryKey(),
   groupId: integer("group_id")
@@ -65,10 +51,6 @@ export const groupMemberAnalytics = pgTable("group_member_analytics", {
   lastActivityAt: timestamp("last_activity_at"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
-
-// ============================================
-// Type Exports for TypeScript
-// ============================================
 
 export type UserActivityLog = typeof userActivityLog.$inferSelect;
 export type NewUserActivityLog = typeof userActivityLog.$inferInsert;

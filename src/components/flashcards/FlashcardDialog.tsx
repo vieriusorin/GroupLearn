@@ -1,5 +1,5 @@
+import dynamic from "next/dynamic";
 import type { FieldValues, Path, UseFormReturn } from "react-hook-form";
-import { RichTextEditor } from "@/components/rich-text-editor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,6 +25,19 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { DifficultyLevelType } from "@/infrastructure/database/schema";
+
+const RichTextEditor = dynamic(
+  () =>
+    import("@/components/rich-text-editor").then((mod) => ({
+      default: mod.RichTextEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[120px] p-3 rounded-md border border-input bg-background animate-pulse" />
+    ),
+  },
+);
 
 interface FlashcardFormFields extends FieldValues {
   question: string;

@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidateTag } from "next/cache";
-import type { UpdateFlashcardResponse } from "@/application/use-cases/content/UpdateFlashcardUseCase";
-import { UpdateFlashcardUseCase } from "@/application/use-cases/content/UpdateFlashcardUseCase";
+import type { UpdateFlashcardResult } from "@/application/dtos/content.dto";
+import { updateFlashcardCommand } from "@/commands/content/UpdateFlashcard.command";
 import type { DifficultyLevelType } from "@/infrastructure/database/schema";
-import { repositories } from "@/infrastructure/di/container";
+import { commandHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
@@ -13,7 +13,7 @@ export async function updateFlashcard(
   question?: string,
   answer?: string,
   difficulty?: DifficultyLevelType,
-): Promise<ActionResult<UpdateFlashcardResponse["data"]>> {
+): Promise<ActionResult<UpdateFlashcardResult["data"]>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!flashcardId || flashcardId <= 0) {
       return {
@@ -36,20 +36,16 @@ export async function updateFlashcard(
       };
     }
 
-    const useCase = new UpdateFlashcardUseCase(
-      repositories.flashcard,
-      repositories.category,
-    );
-
-    const result = await useCase.execute({
-      userId: user.id,
+    const command = updateFlashcardCommand(
+      user.id,
       flashcardId,
       question,
       answer,
       difficulty,
-    });
+    );
+    const result =
+      await commandHandlers.content.updateFlashcard.execute(command);
 
-    // Invalidate dashboard stats cache since flashcard was updated
     revalidateTag("dashboard-stats", { expire: 0 });
 
     return {

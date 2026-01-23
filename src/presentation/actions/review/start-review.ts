@@ -1,26 +1,23 @@
 "use server";
 
-import type { StartReviewSessionResponse } from "@/application/use-cases/review/StartReviewSessionUseCase";
-import { StartReviewSessionUseCase } from "@/application/use-cases/review/StartReviewSessionUseCase";
-import { repositories } from "@/infrastructure/di/container";
+import type { StartReviewSessionResult } from "@/application/dtos/review.dto";
+import { startReviewSessionCommand } from "@/commands/review/StartReviewSession.command";
+import { commandHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
 export async function startReview(
   mode?: "flashcard" | "quiz" | "recall",
   limit?: number,
-): Promise<ActionResult<StartReviewSessionResponse>> {
+): Promise<ActionResult<StartReviewSessionResult>> {
   return withAuth(["admin", "member"], async (user) => {
-    const useCase = new StartReviewSessionUseCase(
-      repositories.reviewHistory,
-      repositories.flashcard,
-    );
-
-    const result = await useCase.execute({
-      userId: user.id,
-      mode: mode || "flashcard",
+    const command = startReviewSessionCommand(
+      user.id,
+      mode || "flashcard",
       limit,
-    });
+    );
+    const result =
+      await commandHandlers.review.startReviewSession.execute(command);
 
     return {
       success: true,

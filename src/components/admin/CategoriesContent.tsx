@@ -5,7 +5,7 @@ import { CategoryCard } from "@/components/admin/CategoryCard";
 import { DragDropList } from "@/components/admin/DragDropList";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Category } from "@/types/category";
+import type { Category } from "@/infrastructure/database/schema";
 
 interface CategoriesContentProps {
   categories: Category[];

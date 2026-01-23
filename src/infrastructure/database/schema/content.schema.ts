@@ -1,9 +1,3 @@
-/**
- * Content Management Schema (PostgreSQL)
- *
- * Tables for domains, categories, flashcards, and review system.
- */
-
 import {
   boolean,
   integer,
@@ -16,20 +10,12 @@ import {
 import { users } from "./auth.schema";
 import { DifficultyLevel, ReviewMode } from "./enums";
 
-// ============================================
-// Domains Table
-// ============================================
-
 export const domains = pgTable("domains", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull().unique(),
   description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
-
-// ============================================
-// Categories Table
-// ============================================
 
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
@@ -41,10 +27,6 @@ export const categories = pgTable("categories", {
   isDeprecated: boolean("is_deprecated").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
-
-// ============================================
-// Flashcards Table
-// ============================================
 
 export const flashcards = pgTable("flashcards", {
   id: serial("id").primaryKey(),
@@ -66,10 +48,6 @@ export const flashcards = pgTable("flashcards", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// ============================================
-// Review History Table
-// ============================================
-
 export const reviewHistory = pgTable("review_history", {
   id: serial("id").primaryKey(),
   userId: text("user_id")
@@ -88,10 +66,6 @@ export const reviewHistory = pgTable("review_history", {
   intervalDays: integer("interval_days").notNull(), // 1, 3, or 7 days
 });
 
-// ============================================
-// Struggling Queue Table
-// ============================================
-
 export const strugglingQueue = pgTable("struggling_queue", {
   id: serial("id").primaryKey(),
   flashcardId: integer("flashcard_id")
@@ -102,10 +76,6 @@ export const strugglingQueue = pgTable("struggling_queue", {
   timesFailed: integer("times_failed").notNull().default(1),
   lastFailedAt: timestamp("last_failed_at").notNull().defaultNow(),
 });
-
-// ============================================
-// Type Exports for TypeScript
-// ============================================
 
 export type Domain = typeof domains.$inferSelect;
 export type NewDomain = typeof domains.$inferInsert;

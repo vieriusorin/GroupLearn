@@ -83,16 +83,27 @@ export default async function LearnPage() {
       const progressData = progressResult.data.progress;
       initialProgress = {
         id: progressData.id || 0,
-        path_id: progressData.pathId,
-        current_unit_id: progressData.currentUnitId,
-        current_lesson_id: progressData.currentLessonId,
-        total_xp: progressData.totalXP,
+        userId: progressData.userId,
+        pathId: progressData.pathId,
+        currentUnitId: progressData.currentUnitId,
+        currentLessonId: progressData.currentLessonId,
+        totalXp: progressData.totalXP,
         hearts: progressData.hearts,
-        last_heart_refill: progressData.lastHeartRefill,
-        streak_count: progressData.streakCount,
-        last_activity_date: progressData.lastActivityDate,
-        created_at: progressData.startedAt,
-        updated_at: progressData.startedAt,
+        lastHeartRefill: new Date(progressData.lastHeartRefill),
+        streakCount: progressData.streakCount,
+        lastActivityDate: progressData.lastActivityDate
+          ? new Date(progressData.lastActivityDate)
+          : null,
+        startedAt: progressData.startedAt
+          ? new Date(progressData.startedAt)
+          : null,
+        completedAt: progressData.completedAt
+          ? new Date(progressData.completedAt)
+          : null,
+        timeSpentTotal: progressData.timeSpentTotal || 0,
+        createdAt: new Date(progressData.startedAt),
+        updatedAt: new Date(progressData.startedAt),
+        groupId: null, // GetUserProgressResponse doesn't include groupId
       };
     }
   }

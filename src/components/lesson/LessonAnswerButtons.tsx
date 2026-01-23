@@ -1,14 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import type { LessonAnswerButtonsProps } from "@/types/lesson";
+import type { LessonAnswerButtonsProps } from "@/presentation/types";
 
 export const LessonAnswerButtons = ({
   onAnswer,
   disabled,
 }: LessonAnswerButtonsProps) => {
   return (
-    <div className="flex gap-4 justify-center" aria-label="Answer options">
+    <fieldset
+      className="flex gap-4 justify-center border-0 p-0 m-0"
+      aria-label="Answer options"
+    >
       <Button
         size="lg"
         variant="destructive"
@@ -28,6 +31,6 @@ export const LessonAnswerButtons = ({
       >
         Correct
       </Button>
-    </div>
+    </fieldset>
   );
 };

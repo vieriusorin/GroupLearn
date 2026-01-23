@@ -1,27 +1,19 @@
 "use server";
 
 import { revalidateTag } from "next/cache";
+import type { RecordReviewResult } from "@/application/dtos/review.dto";
 import { SpacedRepetitionService } from "@/domains/review/services/SpacedRepetitionService";
 import { FlashcardId, UserId } from "@/domains/shared/types/branded-types";
+import type { ReviewModeType } from "@/infrastructure/database/schema";
 import { repositories } from "@/infrastructure/di/container";
-import type { ReviewMode } from "@/lib/types";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
 export async function recordReview(
   flashcardId: number,
-  reviewMode: ReviewMode,
+  reviewMode: ReviewModeType,
   isCorrect: boolean,
-): Promise<
-  ActionResult<{
-    id: number;
-    flashcardId: number;
-    reviewMode: ReviewMode;
-    isCorrect: boolean;
-    nextReviewDate: string;
-    intervalDays: number;
-  }>
-> {
+): Promise<ActionResult<RecordReviewResult>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!flashcardId || flashcardId <= 0) {
       return {
@@ -64,10 +56,18 @@ export async function recordReview(
     );
     const nextReviewDate = nextInterval.calculateNextReviewDate();
 
+    // Convert ReviewModeType to domain ReviewMode
+    const domainReviewMode: "flashcard" | "quiz" | "recall" =
+      reviewMode === "learn"
+        ? "flashcard"
+        : reviewMode === "review"
+          ? "quiz"
+          : "recall";
+
     const reviewRecord = {
       userId,
       flashcardId: FlashcardId(flashcardId),
-      reviewMode,
+      reviewMode: domainReviewMode,
       isCorrect,
       reviewDate: new Date(),
       nextReviewDate,
@@ -76,11 +76,12 @@ export async function recordReview(
 
     const saved = await repositories.reviewHistory.save(reviewRecord);
 
-    const {
-      addToStrugglingQueue,
-      removeFromStrugglingQueue,
-      isCardStruggling,
-    } = await import("@/lib/db-operations");
+    const { commandHandlers, queryHandlers } = await import(
+      "@/infrastructure/di/container"
+    );
+    const { addToStrugglingQueueCommand, removeFromStrugglingQueueCommand } =
+      await import("@/commands");
+    const { isCardStrugglingQuery } = await import("@/queries");
 
     if (!isCorrect) {
       const failureCount = reviewHistory.filter((r) => !r.isCorrect).length + 1;
@@ -91,29 +92,42 @@ export async function recordReview(
       );
 
       if (shouldMark) {
-        await addToStrugglingQueue(flashcardId);
+        const command = addToStrugglingQueueCommand(flashcardId);
+        await commandHandlers.review.addToStrugglingQueue.execute(command);
       }
     } else {
       const recentReviews = reviewHistory.slice(0, 2);
       const allCorrect = recentReviews.every((r) => r.isCorrect) && isCorrect;
-      if (
-        allCorrect &&
-        recentReviews.length >= 1 &&
-        (await isCardStruggling(flashcardId))
-      ) {
-        await removeFromStrugglingQueue(flashcardId);
+      if (allCorrect && recentReviews.length >= 1) {
+        const query = isCardStrugglingQuery(flashcardId);
+        const isStruggling =
+          await queryHandlers.review.isCardStruggling.execute(query);
+        if (isStruggling) {
+          const command = removeFromStrugglingQueueCommand(flashcardId);
+          await commandHandlers.review.removeFromStrugglingQueue.execute(
+            command,
+          );
+        }
       }
     }
 
     // Invalidate dashboard stats cache since review affects stats
     revalidateTag("dashboard-stats", { expire: 0 });
 
+    // Convert domain ReviewMode to response format
+    const responseReviewMode: RecordReviewResult["reviewMode"] =
+      saved.reviewMode === "flashcard"
+        ? "learn"
+        : saved.reviewMode === "quiz"
+          ? "review"
+          : "cram";
+
     return {
       success: true,
       data: {
         id: saved.id as number,
         flashcardId: saved.flashcardId as number,
-        reviewMode: saved.reviewMode,
+        reviewMode: responseReviewMode,
         isCorrect: saved.isCorrect,
         nextReviewDate: saved.nextReviewDate.toISOString(),
         intervalDays: saved.intervalDays,

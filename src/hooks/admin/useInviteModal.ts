@@ -1,16 +1,9 @@
-/**
- * Custom Hook for Invite Modal
- * Manages form state, validation, submission logic, and path organization for sending invitations
- *
- * Separates business logic from UI presentation following separation of concerns
- */
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo, useState } from "react";
-import { type UseFormReturn, useForm } from "react-hook-form";
+import { type Resolver, type UseFormReturn, useForm } from "react-hook-form";
 import type { z } from "zod";
-import type { PathWithProgress } from "@/lib/types";
-import { invitationFormSchema } from "@/lib/validation";
+import type { PathWithProgress } from "@/application/dtos";
+import { invitationFormSchema } from "@/lib/shared/validation";
 import { getPaths } from "@/presentation/actions/paths/get-paths";
 
 export type InvitationFormData = z.infer<typeof invitationFormSchema>;
@@ -26,12 +19,9 @@ interface UseInviteModalProps {
 }
 
 type InvitePath = PathWithProgress & {
-  domain_name?: string;
+  domainName?: string;
 };
 
-/**
- * Group paths by domain name for better organization
- */
 function groupPathsByDomain(
   paths: InvitePath[] | undefined,
 ): Record<string, InvitePath[]> {
@@ -39,7 +29,7 @@ function groupPathsByDomain(
 
   const grouped: Record<string, InvitePath[]> = {};
   paths.forEach((path) => {
-    const domainName = path.domain_name || "Uncategorized";
+    const domainName = (path as any).domainName || "Uncategorized";
     if (!grouped[domainName]) {
       grouped[domainName] = [];
     }
@@ -49,9 +39,6 @@ function groupPathsByDomain(
   return grouped;
 }
 
-/**
- * Toggle a path ID in the selected paths array
- */
 function togglePathId(pathId: number, currentPathIds: number[]): number[] {
   const isSelected = currentPathIds.includes(pathId);
   if (isSelected) {
@@ -65,11 +52,9 @@ export function useInviteModal({
   onSend,
   onSent,
 }: UseInviteModalProps) {
-  // Local state for paths loaded via Server Action
   const [allPaths, setAllPaths] = useState<InvitePath[]>([]);
   const [isLoadingPaths, setIsLoadingPaths] = useState(true);
 
-  // Load all paths once when the modal hook is used
   useEffect(() => {
     let cancelled = false;
 
@@ -82,7 +67,6 @@ export function useInviteModal({
         if (cancelled) return;
 
         if (!result.success) {
-          // On error, keep paths empty; caller can decide how to show errors
           setAllPaths([]);
           return;
         }
@@ -106,7 +90,6 @@ export function useInviteModal({
     };
   }, []);
 
-  // Initialize form with default values
   const defaultValues = useMemo<InvitationFormData>(
     () => ({
       email: "",
@@ -117,25 +100,23 @@ export function useInviteModal({
   );
 
   const form = useForm<InvitationFormData>({
-    resolver: zodResolver(invitationFormSchema) as any, // Type mismatch between optional and required fields
+    resolver: zodResolver(
+      invitationFormSchema,
+    ) as unknown as Resolver<InvitationFormData>,
     defaultValues,
     mode: "onChange",
   });
 
-  // Group paths by domain for better organization
   const pathsByDomain = useMemo(() => {
     return groupPathsByDomain(allPaths);
   }, [allPaths]);
 
-  // Check if form is valid
   const isFormValid = form.formState.isValid ?? false;
 
-  // Handle path toggle
   function handlePathToggle(pathId: number, currentPathIds: number[]) {
     return togglePathId(pathId, currentPathIds);
   }
 
-  // Handle form submission
   async function handleSubmit(data: InvitationFormData) {
     try {
       await onSend(data.email.trim(), data.role, data.selectedPathIds);
@@ -151,17 +132,12 @@ export function useInviteModal({
   }
 
   return {
-    // Form instance
     form: form as UseFormReturn<InvitationFormData>,
-
-    // State
     isSending,
     isFormValid,
     isLoadingPaths,
     allPaths,
     pathsByDomain,
-
-    // Actions
     onSubmit: handleSubmit,
     handlePathToggle,
   };

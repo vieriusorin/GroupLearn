@@ -1,8 +1,10 @@
 "use server";
 
-import type { CreateCategoryResponse } from "@/application/use-cases/content/CreateCategoryUseCase";
-import { CreateCategoryUseCase } from "@/application/use-cases/content/CreateCategoryUseCase";
-import { repositories } from "@/infrastructure/di/container";
+import { revalidatePath, revalidateTag } from "next/cache";
+import type { CreateCategoryResult } from "@/application/dtos/content.dto";
+import { createCategoryCommand } from "@/commands/content/CreateCategory.command";
+import { commandHandlers } from "@/infrastructure/di/container";
+import { CACHE_TAGS } from "@/lib/infrastructure/cache-tags";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
@@ -10,7 +12,7 @@ export async function createCategory(
   domainId: number,
   name: string,
   description?: string | null,
-): Promise<ActionResult<CreateCategoryResponse["data"]>> {
+): Promise<ActionResult<CreateCategoryResult["data"]>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!domainId || domainId <= 0) {
       return {
@@ -28,17 +30,22 @@ export async function createCategory(
       };
     }
 
-    const useCase = new CreateCategoryUseCase(
-      repositories.category,
-      repositories.domain,
-    );
-
-    const result = await useCase.execute({
-      userId: user.id,
+    const command = createCategoryCommand(
+      user.id,
       domainId,
-      name: name.trim(),
-      description: description?.trim() || null,
-    });
+      name.trim(),
+      description?.trim() || null,
+    );
+    const result =
+      await commandHandlers.content.createCategory.execute(command);
+
+    // Revalidate paths
+    revalidatePath("/admin/categories");
+    revalidatePath("/admin/flashcards");
+
+    // Revalidate cache tags
+    revalidateTag(CACHE_TAGS.categories(domainId));
+    revalidateTag(CACHE_TAGS.categoriesAll);
 
     return {
       success: true,

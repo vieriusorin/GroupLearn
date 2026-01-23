@@ -35,11 +35,11 @@ export const MyGroupsGrid = ({ groups }: Props) => {
             <div className="space-y-2 pt-4 border-t">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Members:</span>
-                <span className="font-medium">{group.member_count || 0}</span>
+                <span className="font-medium">{group.memberCount || 0}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Learning Paths:</span>
-                <span className="font-medium">{group.path_count || 0}</span>
+                <span className="font-medium">{group.pathCount || 0}</span>
               </div>
             </div>
 

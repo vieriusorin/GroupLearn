@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useCategoryModal } from "@/hooks/admin/useCategoryModal";
-import type { CategoryModalProps } from "@/types/category";
+import type { CategoryModalProps } from "@/presentation/types";
 
 export function CategoryModal({
   category,

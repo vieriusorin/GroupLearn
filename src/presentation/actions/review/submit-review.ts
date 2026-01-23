@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidateTag } from "next/cache";
-import type { SubmitReviewResponse } from "@/application/use-cases/review/SubmitReviewUseCase";
-import { SubmitReviewUseCase } from "@/application/use-cases/review/SubmitReviewUseCase";
-import { repositories } from "@/infrastructure/di/container";
+import type { SubmitReviewResult } from "@/application/dtos/review.dto";
+import { submitReviewCommand } from "@/commands/review/SubmitReview.command";
+import { commandHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
@@ -11,7 +11,7 @@ export async function submitReview(
   sessionId: string,
   flashcardId: number,
   isCorrect: boolean,
-): Promise<ActionResult<SubmitReviewResponse>> {
+): Promise<ActionResult<SubmitReviewResult>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!sessionId || sessionId.trim().length === 0) {
       return {
@@ -29,19 +29,14 @@ export async function submitReview(
       };
     }
 
-    const useCase = new SubmitReviewUseCase(
-      repositories.reviewHistory,
-      repositories.session,
-    );
-
-    const result = await useCase.execute({
-      userId: user.id,
+    const command = submitReviewCommand(
+      user.id,
       sessionId,
       flashcardId,
       isCorrect,
-    });
+    );
+    const result = await commandHandlers.review.submitReview.execute(command);
 
-    // Invalidate dashboard stats cache since review affects stats
     revalidateTag("dashboard-stats", { expire: 0 });
 
     return {

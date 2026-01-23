@@ -1,15 +1,13 @@
-/**
- * Custom Hook for Sign In Page
- * Manages form state, validation, and business logic for the sign in page
- * Uses NextAuth directly instead of TanStack Query
- */
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
-import { authClient } from "@/lib/better-auth-client";
-import { type SignInInput, signInSchema } from "@/lib/validation";
+import { authClient } from "@/lib/auth/better-auth-client";
+import {
+  type SignInInput as BaseSignInInput,
+  signInSchema,
+} from "@/lib/shared/validation";
+import { signIn } from "@/presentation/actions/auth";
 
 export function useSignInPage() {
   const searchParams = useSearchParams();
@@ -19,7 +17,7 @@ export function useSignInPage() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const form = useForm<SignInInput>({
+  const form = useForm<BaseSignInInput>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
       email: "",
@@ -31,7 +29,6 @@ export function useSignInPage() {
   const formState = form.formState;
   const formValues = form.watch();
 
-  // Check if form is valid and all required fields are filled
   const isFormValid =
     formState.isValid &&
     formValues.email.trim() !== "" &&
@@ -45,31 +42,25 @@ export function useSignInPage() {
     });
   };
 
-  const handleEmailSignIn = async (data: SignInInput) => {
+  const handleEmailSignIn = async (data: BaseSignInInput) => {
     setError(null);
 
     startTransition(async () => {
-      const { error: signInError } = await authClient.signIn.email(
-        {
-          email: data.email,
-          password: data.password,
-          callbackURL: callbackUrl,
-          rememberMe: true,
-        },
-        {
-          onError: (ctx) => {
-            setError(ctx.error.message || "Invalid email or password");
-          },
-          onSuccess: () => {
-            router.push(callbackUrl);
-            router.refresh();
-          },
-        },
-      );
+      const result = await signIn({
+        email: data.email,
+        password: data.password,
+        callbackUrl,
+        rememberMe: true,
+      });
 
-      if (signInError) {
-        setError(signInError.message || "Failed to sign in");
+      if (!result.success) {
+        setError(result.error || "Failed to sign in");
+        return;
       }
+
+      // Success - redirect and refresh
+      router.push(callbackUrl);
+      router.refresh();
     });
   };
 

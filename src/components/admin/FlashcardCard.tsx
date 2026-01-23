@@ -1,15 +1,15 @@
 "use client";
 
 import { CreditCard, GripVertical } from "lucide-react";
+import type { FlashcardAdmin } from "@/application/dtos";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import type { AdminFlashcard } from "@/lib/types";
 
 interface FlashcardCardProps {
-  flashcard: AdminFlashcard;
+  flashcard: FlashcardAdmin;
   isDeleting?: boolean;
-  onEdit: (flashcard: AdminFlashcard) => void;
+  onEdit: (flashcard: FlashcardAdmin) => void;
   onDelete: (id: number) => void;
   dragHandleProps?: any;
 }
@@ -32,13 +32,14 @@ export const FlashcardCard = ({
       <CardContent className="p-6">
         {/* Drag Handle */}
         {dragHandleProps && (
-          <div
+          <button
+            type="button"
             {...dragHandleProps}
-            className="flex justify-center mb-2 -mt-2 py-1"
+            className="flex justify-center mb-2 -mt-2 py-1 border-0 bg-transparent cursor-grab active:cursor-grabbing"
             aria-label="Drag to reorder"
           >
             <GripVertical className="h-5 w-5 text-muted-foreground/50 hover:text-muted-foreground transition-colors" />
-          </div>
+          </button>
         )}
 
         <div className="flex items-start justify-between">
@@ -59,16 +60,18 @@ export const FlashcardCard = ({
                   {flashcard.difficulty}
                 </Badge>
                 <Badge
-                  variant={flashcard.is_active ? "default" : "secondary"}
+                  variant={flashcard.isActive ? "default" : "secondary"}
                   className={
-                    flashcard.is_active ? "bg-green-600 hover:bg-green-700" : ""
+                    flashcard.isActive ? "bg-green-600 hover:bg-green-700" : ""
                   }
                 >
-                  {flashcard.is_active ? "Active" : "Inactive"}
+                  {flashcard.isActive ? "Active" : "Inactive"}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  Order: #{flashcard.display_order}
-                </span>
+                {flashcard.displayOrder !== undefined && (
+                  <span className="text-xs text-muted-foreground">
+                    Order: #{flashcard.displayOrder}
+                  </span>
+                )}
               </div>
             </div>
 

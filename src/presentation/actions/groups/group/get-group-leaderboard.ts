@@ -1,20 +1,24 @@
 "use server";
 
-import { getGroupLeaderboard, type LeaderboardEntry } from "@/lib/analytics";
+import type { GroupLeaderboardEntry } from "@/application/dtos/groups.dto";
+import { queryHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getGroupLeaderboardQuery } from "@/queries/groups/GetGroupLeaderboard.query";
 
 export async function getGroupLeaderboardAction(
   groupId: number,
   limit: number = 10,
-): Promise<ActionResult<LeaderboardEntry[]>> {
+): Promise<ActionResult<GroupLeaderboardEntry[]>> {
   return withAuth(["admin", "member"], async (_user) => {
     try {
-      const leaderboard = await getGroupLeaderboard(groupId, limit);
+      const query = getGroupLeaderboardQuery(groupId, limit);
+      const result =
+        await queryHandlers.groups.getGroupLeaderboard.execute(query);
 
       return {
         success: true,
-        data: leaderboard,
+        data: result.leaderboard,
       };
     } catch (error) {
       console.error("Error fetching group leaderboard:", error);

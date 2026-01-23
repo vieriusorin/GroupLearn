@@ -1,18 +1,18 @@
 "use client";
 
+import type { FlashcardAdmin } from "@/application/dtos";
 import { DragDropList } from "@/components/admin/DragDropList";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { FlashcardCard } from "@/components/admin/FlashcardCard";
-import type { AdminFlashcard } from "@/lib/types";
 
 interface FlashcardsContentProps {
-  flashcards: AdminFlashcard[];
+  flashcards: FlashcardAdmin[];
   isLoading: boolean;
   isReordering: boolean;
-  flashcardToDelete: AdminFlashcard | null;
+  flashcardToDelete: FlashcardAdmin | null;
   isDeleting: boolean;
-  onReorder: (flashcards: AdminFlashcard[]) => Promise<void>;
-  onEdit: (flashcard: AdminFlashcard) => void;
+  onReorder: (flashcards: FlashcardAdmin[]) => Promise<void>;
+  onEdit: (flashcard: FlashcardAdmin) => void;
   onDelete: (id: number) => void;
   onCreateClick: () => void;
 }

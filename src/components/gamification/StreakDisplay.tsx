@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Flame } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/shared/utils";
 
 interface StreakDisplayProps {
   streakCount: number;

@@ -1,8 +1,8 @@
 "use client";
 
+import type { LessonWithProgress, UnitWithProgress } from "@/application/dtos";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import type { LessonWithProgress, UnitWithProgress } from "@/lib/types";
 import { LessonNode } from "./LessonNode";
 
 interface UnitNodeProps {
@@ -36,7 +36,7 @@ export function UnitNode({
       {/* Unit Header */}
       <div className="mb-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <h3 className="text-xl font-bold">Unit {unit.unit_number}</h3>
+          <h3 className="text-xl font-bold">Unit {unit.unitNumber}</h3>
           <Badge className={getDifficultyColor(unit.difficulty)}>
             {unit.difficulty}
           </Badge>
@@ -50,9 +50,9 @@ export function UnitNode({
 
         {/* Progress Bar */}
         <div className="mt-3 max-w-xs mx-auto">
-          <Progress value={unit.completion_percent} className="h-2" />
+          <Progress value={unit.completionPercent} className="h-2" />
           <p className="text-xs text-muted-foreground mt-1">
-            {unit.completed_lessons} / {unit.total_lessons} lessons
+            {unit.completedLessons} / {unit.totalLessons} lessons
           </p>
         </div>
       </div>
@@ -63,7 +63,7 @@ export function UnitNode({
           <LessonNode
             key={lesson.id}
             lesson={lesson}
-            unitNumber={unit.unit_number}
+            unitNumber={unit.unitNumber}
             onClick={() => onLessonClick(lesson)}
             isCurrent={lesson.id === currentLessonId}
           />

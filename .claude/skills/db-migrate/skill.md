@@ -1,117 +1,220 @@
 ---
 name: db-migrate
-description: Create and run database migrations for SQLite schema changes
+description: Create and run database migrations for PostgreSQL using Drizzle ORM
 allowed-tools: [Write, Bash, Read, Edit]
 ---
 
 ## Purpose
-Create migration scripts for database schema changes in the learning-cards SQLite database.
+Create migration scripts for database schema changes in the learning-cards PostgreSQL database using Drizzle ORM.
 
 ## Guidelines
 
-### 1. Migration File Structure
-- Create migration files in `tools/` directory
-- Use descriptive names: `migrate-<feature-name>.ts` or `add-<column-name>.ts`
-- Follow existing patterns in tools/ folder
+### 1. Migration Workflow with Drizzle Kit
 
-### 2. Migration Script Template
-```typescript
-import Database from 'better-sqlite3';
-import path from 'path';
+**Primary Approach: Use Drizzle Kit (Recommended)**
 
-const dbPath = path.join(process.cwd(), 'data', 'learning-cards.db');
-const db = new Database(dbPath);
+Drizzle Kit automatically generates migrations by comparing schema changes:
 
-try {
-  console.log('Starting migration: <description>...');
-
-  // Check if migration already applied
-  const checkStmt = db.prepare(`
-    SELECT COUNT(*) as count FROM pragma_table_info('<table>')
-    WHERE name = '<column>'
-  `);
-  const result = checkStmt.get() as { count: number };
-
-  if (result.count > 0) {
-    console.log('Migration already applied. Skipping.');
-    process.exit(0);
-  }
-
-  // Apply migration
-  db.exec(`
-    -- Your SQL here
-    ALTER TABLE <table> ADD COLUMN <column> <type> DEFAULT <value>;
-
-    -- Index if needed
-    CREATE INDEX IF NOT EXISTS idx_<table>_<column> ON <table>(<column>);
-  `);
-
-  console.log('Migration completed successfully!');
-} catch (error) {
-  console.error('Migration failed:', error);
-  process.exit(1);
-} finally {
-  db.close();
-}
-```
-
-### 3. Common Migration Patterns
-
-**Adding a column:**
-```sql
-ALTER TABLE table_name ADD COLUMN column_name TYPE DEFAULT value;
-```
-
-**Creating a table:**
-```sql
-CREATE TABLE IF NOT EXISTS table_name (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  column1 TEXT NOT NULL,
-  column2 INTEGER DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-**Creating an index:**
-```sql
-CREATE INDEX IF NOT EXISTS idx_table_column ON table(column);
-```
-
-**Updating existing data:**
-```sql
-UPDATE table_name SET column = value WHERE condition;
-```
-
-### 4. Testing Migrations
-- Always check if migration already applied (idempotent)
-- Test on a backup database first
-- Verify with `npm run check:db` after migration
-- Document in migration file what changed
-
-### 5. Running Migrations
 ```bash
-# Add script to package.json first
-npm run migrate:<name>
+# 1. Update schema files in src/infrastructure/database/schema/
+# 2. Generate migration
+npx drizzle-kit generate
 
-# Or run directly
-tsx tools/migrate-<name>.ts
+# 3. Apply migration
+npx drizzle-kit push
+
+# Or use push for prototyping (applies changes directly without migration files)
+npx drizzle-kit push
+```
+
+### 2. Schema File Structure
+
+Schema files are located in `src/infrastructure/database/schema/`:
+- `auth.schema.ts` - Authentication tables
+- `content.schema.ts` - Content management tables
+- `groups.schema.ts` - Group/organization tables
+- `gamification.schema.ts` - Gamification features
+- `analytics.schema.ts` - Analytics and tracking
+- `learning-path.schema.ts` - Learning paths
+- `index.ts` - Schema exports
+
+### 3. Drizzle Schema Pattern
+
+```typescript
+import { pgTable, text, integer, timestamp, boolean, varchar, uuid } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+
+// Define table
+export const exampleTable = pgTable('example_table', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  count: integer('count').default(0).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Define relations (optional)
+export const exampleTableRelations = relations(exampleTable, ({ one, many }) => ({
+  // Define relationships here
+}));
+
+// Export types
+export type ExampleTable = typeof exampleTable.$inferSelect;
+export type NewExampleTable = typeof exampleTable.$inferInsert;
+```
+
+### 4. Common Schema Patterns
+
+**Primary Keys:**
+```typescript
+// Auto-incrementing integer
+id: serial('id').primaryKey()
+
+// UUID (recommended for PostgreSQL)
+id: uuid('id').defaultRandom().primaryKey()
+```
+
+**Common Column Types:**
+```typescript
+// Text fields
+name: varchar('name', { length: 255 }).notNull()
+description: text('description')
+email: varchar('email', { length: 255 }).notNull().unique()
+
+// Numbers
+count: integer('count').default(0).notNull()
+score: real('score') // for decimals
+
+// Booleans
+isActive: boolean('is_active').default(true).notNull()
+
+// Timestamps
+createdAt: timestamp('created_at').defaultNow().notNull()
+updatedAt: timestamp('updated_at').defaultNow().notNull()
+
+// JSON
+metadata: jsonb('metadata')
+
+// Enums
+status: text('status', { enum: ['active', 'inactive', 'pending'] }).notNull()
+```
+
+**Foreign Keys:**
+```typescript
+userId: uuid('user_id')
+  .notNull()
+  .references(() => users.id, { onDelete: 'cascade' })
+```
+
+**Indexes:**
+```typescript
+import { index, uniqueIndex } from 'drizzle-orm/pg-core';
+
+export const exampleTable = pgTable('example_table', {
+  // ... columns
+}, (table) => ({
+  emailIdx: index('email_idx').on(table.email),
+  userIdIdx: index('user_id_idx').on(table.userId),
+  emailUnique: uniqueIndex('email_unique').on(table.email),
+}));
+```
+
+### 5. Manual Migrations (When Needed)
+
+For complex migrations that Drizzle Kit can't handle automatically, create manual SQL migration files in `drizzle/migrations/`:
+
+```sql
+-- drizzle/migrations/0005_add_custom_logic.sql
+
+-- Add complex data transformations
+UPDATE users SET normalized_email = LOWER(email);
+
+-- Add triggers or functions
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_example_updated_at
+  BEFORE UPDATE ON example_table
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+```
+
+### 6. Migration Testing
+
+```bash
+# Check migration status
+npx drizzle-kit check
+
+# Generate migration (dry run to see what would change)
+npx drizzle-kit generate
+
+# Apply migrations
+npx drizzle-kit push
+
+# Introspect existing database (generates schema from DB)
+npx drizzle-kit introspect
+```
+
+### 7. Database Operations in Code
+
+```typescript
+import { db } from '@/infrastructure/database/drizzle';
+import { users } from '@/infrastructure/database/schema';
+import { eq, and, or, like, gte } from 'drizzle-orm';
+
+// Select
+const allUsers = await db.select().from(users);
+const user = await db.select().from(users).where(eq(users.id, userId));
+
+// Insert
+await db.insert(users).values({
+  email: 'test@example.com',
+  name: 'Test User',
+});
+
+// Update
+await db.update(users)
+  .set({ name: 'New Name', updatedAt: new Date() })
+  .where(eq(users.id, userId));
+
+// Delete
+await db.delete(users).where(eq(users.id, userId));
+
+// Transactions
+await db.transaction(async (tx) => {
+  await tx.insert(users).values({ ... });
+  await tx.insert(profiles).values({ ... });
+});
 ```
 
 ## Example Usage
 
 When user asks: "Add a new column to track user preferences"
 
-1. Create `tools/add-user-preferences.ts`
-2. Write migration following template
-3. Add script to package.json: `"migrate:preferences": "tsx tools/add-user-preferences.ts"`
-4. Run migration
-5. Update TypeScript types if needed
+1. Edit the appropriate schema file (e.g., `src/infrastructure/database/schema/auth.schema.ts`)
+2. Add the new column:
+```typescript
+preferences: jsonb('preferences').$type<UserPreferences>(),
+```
+3. Generate migration: `npx drizzle-kit generate`
+4. Review the generated migration in `drizzle/migrations/`
+5. Apply migration: `npx drizzle-kit push`
+6. Update TypeScript types if needed (Drizzle auto-generates types)
 
 ## Safety Checks
-- ✅ Always use `IF NOT EXISTS` for CREATE statements
-- ✅ Check if column/table exists before adding
-- ✅ Use transactions for complex migrations
-- ✅ Close database connection in finally block
-- ✅ Provide clear error messages
+- ✅ Always test schema changes locally first
+- ✅ Review generated migrations before applying
+- ✅ Use transactions for complex multi-table changes
+- ✅ Add `notNull()` constraints carefully on existing tables
+- ✅ Use `onDelete: 'cascade'` or `'set null'` for foreign keys appropriately
+- ✅ Backup database before destructive operations
 - ⚠️ Never delete data without explicit user confirmation
-- ⚠️ Always backup before destructive operations
+- ⚠️ Consider data migration scripts for column renames or type changes
+- ⚠️ Be careful with unique constraints on existing data

@@ -1,17 +1,15 @@
 "use server";
 
-import { eq } from "drizzle-orm";
-import { db } from "@/infrastructure/database/drizzle";
-import { users } from "@/infrastructure/database/schema/auth.schema";
-import { groups } from "@/infrastructure/database/schema/groups.schema";
+import type { SuccessResult } from "@/application/dtos/groups.dto";
+import { deleteGroupCommand } from "@/commands/groups/DeleteGroup.command";
+import { commandHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
 export async function deleteGroup(
   groupId: number,
-): Promise<ActionResult<{ success: boolean }>> {
+): Promise<ActionResult<SuccessResult>> {
   return withAuth(["admin", "member"], async (user) => {
-    // Validate input
     if (!groupId || groupId <= 0) {
       return {
         success: false,
@@ -20,52 +18,12 @@ export async function deleteGroup(
       };
     }
 
-    const [group] = await db
-      .select({
-        id: groups.id,
-        adminId: groups.adminId,
-      })
-      .from(groups)
-      .where(eq(groups.id, groupId))
-      .limit(1);
-
-    if (!group) {
-      return {
-        success: false,
-        error: "Group not found",
-        code: "NOT_FOUND",
-      };
-    }
-
-    const [userRecord] = await db
-      .select({
-        role: users.role,
-      })
-      .from(users)
-      .where(eq(users.id, user.id))
-      .limit(1);
-
-    if (!userRecord) {
-      return {
-        success: false,
-        error: "User not found",
-        code: "NOT_FOUND",
-      };
-    }
-
-    if (userRecord.role !== "admin" && group.adminId !== user.id) {
-      return {
-        success: false,
-        error: "You do not have permission to delete this group",
-        code: "FORBIDDEN",
-      };
-    }
-
-    await db.delete(groups).where(eq(groups.id, groupId));
+    const command = deleteGroupCommand(user.id, groupId);
+    const result = await commandHandlers.groups.deleteGroup.execute(command);
 
     return {
       success: true,
-      data: { success: true },
+      data: result,
     };
   });
 }

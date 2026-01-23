@@ -1,13 +1,29 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import type { PathWithProgress } from "@/application/dtos";
 import { DuolingoSidebar } from "@/components/layout/DuolingoSidebar";
-import { PathSelector } from "@/components/path/PathSelector";
-import { PathVisualization } from "@/components/path/PathVisualization";
-import type { PathWithProgress, UserProgress } from "@/lib/types";
+import type { UserProgress } from "@/infrastructure/database/schema";
 import { getUserProgress } from "@/presentation/actions/progress/get-user-progress";
 import { getUserStats } from "@/presentation/actions/user/get-user-stats";
+
+const PathSelector = dynamic(
+  () =>
+    import("@/components/path/PathSelector").then((mod) => ({
+      default: mod.PathSelector,
+    })),
+  { ssr: false },
+);
+
+const PathVisualization = dynamic(
+  () =>
+    import("@/components/path/PathVisualization").then((mod) => ({
+      default: mod.PathVisualization,
+    })),
+  { ssr: false },
+);
 
 const SELECTED_PATH_KEY = "selectedPathId";
 
@@ -16,11 +32,11 @@ interface LearnPageClientProps {
   initialPathId: number | null;
   initialProgress: UserProgress | null;
   initialUserStats: {
-    total_xp: number;
-    streak_count: number;
-    lessons_completed_today: number;
-    total_lessons_completed: number;
-    xp_earned_today: number;
+    totalXp: number;
+    streakCount: number;
+    lessonsCompletedToday: number;
+    totalLessonsCompleted: number;
+    xpEarnedToday: number;
   } | null;
 }
 
@@ -115,11 +131,11 @@ export function LearnPageClient({
         {/* Right sidebar */}
         <aside aria-label="User progress and statistics">
           <DuolingoSidebar
-            totalXP={userStats?.total_xp || 0}
-            streakCount={userStats?.streak_count || 0}
-            lessonsCompletedToday={userStats?.lessons_completed_today || 0}
+            totalXP={userStats?.totalXp || 0}
+            streakCount={userStats?.streakCount || 0}
+            lessonsCompletedToday={userStats?.lessonsCompletedToday || 0}
             dailyGoalLessons={10}
-            xpEarnedToday={userStats?.xp_earned_today || 0}
+            xpEarnedToday={userStats?.xpEarnedToday || 0}
             isAuthenticated={true}
           />
         </aside>

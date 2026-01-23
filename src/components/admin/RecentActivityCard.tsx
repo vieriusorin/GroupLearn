@@ -1,5 +1,6 @@
+import type { RecentDomain } from "@/application/dtos/admin.dto";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { RecentDomain, RecentGroup } from "@/types/admin";
+import type { RecentGroup } from "@/types/admin";
 
 interface RecentActivityCardProps {
   title: string;
@@ -21,8 +22,8 @@ export function RecentActivityCard({
         {items.length > 0 ? (
           <ul className="space-y-3">
             {items.map((item) => {
-              const isGroup = "admin_name" in item && "member_count" in item;
-              const isDomain = "category_count" in item;
+              const isGroup = "adminName" in item && "memberCount" in item;
+              const isDomain = "categoryCount" in item;
 
               return (
                 <li key={item.id}>
@@ -36,11 +37,11 @@ export function RecentActivityCard({
                           <>
                             By <span className="sr-only">Admin: </span>
                             <span className="font-medium">
-                              {(item as RecentGroup).admin_name || "Unknown"}
+                              {(item as RecentGroup).adminName || "Unknown"}
                             </span>{" "}
                             • <span className="sr-only">Members: </span>
                             <span className="font-medium">
-                              {(item as RecentGroup).member_count} members
+                              {(item as RecentGroup).memberCount} members
                             </span>
                           </>
                         )}
@@ -48,17 +49,17 @@ export function RecentActivityCard({
                           <>
                             <span className="sr-only">Categories: </span>
                             <span className="font-medium">
-                              {(item as RecentDomain).category_count} categories
+                              {(item as RecentDomain).categoryCount} categories
                             </span>
                           </>
                         )}
                       </p>
                     </div>
                     <time
-                      dateTime={item.created_at}
+                      dateTime={item.createdAt}
                       className="text-xs text-muted-foreground ml-4 flex-shrink-0"
                     >
-                      {new Date(item.created_at).toLocaleDateString()}
+                      {new Date(item.createdAt).toLocaleDateString()}
                     </time>
                   </div>
                 </li>

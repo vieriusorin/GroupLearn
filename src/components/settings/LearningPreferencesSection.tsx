@@ -15,8 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { UserPreferences } from "@/lib/preferences";
-import type { ReviewMode } from "@/lib/types";
+import type { ReviewModeType } from "@/infrastructure/database/schema";
+import type { UserPreferences } from "@/lib/shared/preferences";
 
 interface LearningPreferencesSectionProps {
   preferences: UserPreferences;
@@ -24,7 +24,7 @@ interface LearningPreferencesSectionProps {
 }
 
 const DAILY_GOAL_OPTIONS = [5, 10, 15, 20] as const;
-const REVIEW_MODE_OPTIONS: ReviewMode[] = ["flashcard", "quiz", "recall"];
+const REVIEW_MODE_OPTIONS: ReviewModeType[] = ["learn", "review", "cram"];
 
 export const LearningPreferencesSection = ({
   preferences,
@@ -85,7 +85,7 @@ export const LearningPreferencesSection = ({
           <Select
             value={preferences.defaultReviewMode}
             onValueChange={(value) =>
-              onUpdate({ defaultReviewMode: value as ReviewMode })
+              onUpdate({ defaultReviewMode: value as ReviewModeType })
             }
           >
             <SelectTrigger

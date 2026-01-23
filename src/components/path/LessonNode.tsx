@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 import { Check, Lock, Star } from "lucide-react";
-import type { LessonWithProgress } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import type { LessonWithProgress } from "@/application/dtos";
+import { cn } from "@/lib/shared/utils";
 
 interface LessonNodeProps {
   lesson: LessonWithProgress;
@@ -18,9 +18,9 @@ export function LessonNode({
   onClick,
   isCurrent,
 }: LessonNodeProps) {
-  const isLocked = !lesson.is_unlocked;
-  const isCompleted = lesson.is_completed;
-  const isAvailable = lesson.is_unlocked && !lesson.is_completed;
+  const isLocked = !lesson.isUnlocked;
+  const isCompleted = lesson.isCompleted;
+  const isAvailable = lesson.isUnlocked && !lesson.isCompleted;
 
   // Color based on unit number (difficulty)
   const getColor = () => {
@@ -50,13 +50,13 @@ export function LessonNode({
       >
         {isLocked && <Lock className="h-6 w-6" />}
         {isCompleted && <Star className="h-6 w-6 fill-current" />}
-        {isAvailable && <span>{lesson.order_index + 1}</span>}
+        {isAvailable && <span>{lesson.orderIndex + 1}</span>}
       </motion.button>
 
-      {isCompleted && lesson.best_accuracy !== null && (
+      {isCompleted && lesson.bestAccuracy !== null && (
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Check className="h-3 w-3" />
-          <span>{lesson.best_accuracy}%</span>
+          <span>{lesson.bestAccuracy}%</span>
         </div>
       )}
     </div>

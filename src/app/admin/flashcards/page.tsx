@@ -1,10 +1,17 @@
-import { AdminFlashcardsClient } from "@/components/admin/AdminFlashcardsClient";
+import dynamic from "next/dynamic";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   getCategories,
   getDomains,
   getFlashcards,
 } from "@/presentation/actions/content";
+
+const AdminFlashcardsClient = dynamic(() =>
+  import("@/components/admin/AdminFlashcardsClient").then((mod) => ({
+    default: mod.AdminFlashcardsClient,
+  })),
+);
+
 import type {
   AdminCategoryDto,
   AdminDomainDto,
@@ -32,8 +39,9 @@ export default async function AdminFlashcardsPage() {
     );
   }
 
+  const domains = domainsResult.data.domains || [];
   const firstDomain: AdminDomainDto | null =
-    domainsResult.data.length > 0 ? domainsResult.data[0] : null;
+    domains.length > 0 ? domains[0] : null;
 
   let initialCategories: AdminCategoryDto[] = [];
   let firstCategory: AdminCategoryDto | null = null;
@@ -57,7 +65,7 @@ export default async function AdminFlashcardsPage() {
 
   return (
     <AdminFlashcardsClient
-      initialDomains={domainsResult.data}
+      initialDomains={domains}
       initialSelectedDomainId={firstDomain?.id || null}
       initialCategories={initialCategories}
       initialSelectedCategoryId={firstCategory?.id || null}

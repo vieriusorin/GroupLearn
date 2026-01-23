@@ -1,6 +1,9 @@
 "use server";
 
-import { createDomainSchema, updateDomainSchema } from "@/lib/validation";
+import {
+  createDomainSchema,
+  updateDomainSchema,
+} from "@/lib/shared/validation";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { createDomain } from "./create-domain";
 import { updateDomain } from "./update-domain";

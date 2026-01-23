@@ -2,7 +2,7 @@ import { AdminDashboardHeader } from "@/components/admin/AdminDashboardHeader";
 import { AdminQuickActions } from "@/components/admin/AdminQuickActions";
 import { AdminRecentActivity } from "@/components/admin/AdminRecentActivity";
 import { AdminStatsGrid } from "@/components/admin/AdminStatsGrid";
-import { AdminStatsRepository } from "@/lib/repositories/admin-stats.repository";
+import { AdminStatsRepository } from "@/lib/admin/admin-stats.repository";
 
 export default async function AdminDashboard() {
   const { stats, recentGroups, recentDomains } =

@@ -1,9 +1,8 @@
-import { eq } from "drizzle-orm";
 import { DomainError, ValidationError } from "@/domains/shared/errors";
-import { users } from "@/infrastructure/database/schema/auth.schema";
-import { auth } from "@/lib/auth";
-import { getDb } from "@/lib/db";
-import type { UserRole } from "@/lib/rbac";
+import { queryHandlers } from "@/infrastructure/di/container";
+import { auth } from "@/lib/auth/auth";
+import type { UserRole } from "@/lib/auth/rbac";
+import { getUserAuthDataQuery } from "@/queries/auth/GetUserAuthData.query";
 import type { ActionResult } from "../types/action-result";
 
 type AuthUser = {
@@ -33,61 +32,21 @@ const loadAuthUser = async (sessionUser: {
     return fallback;
   }
 
-  const db = getDb();
+  const query = getUserAuthDataQuery(sessionUser.id);
+  const result = await queryHandlers.auth.getUserAuthData.execute(query);
 
-  console.log(
-    "[loadAuthUser] Searching for user with ID:",
-    sessionUser.id,
-    "Type:",
-    typeof sessionUser.id,
-  );
-
-  const rows = await db
-    .select({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-      role: users.role,
-      subscriptionStatus: users.subscriptionStatus,
-      subscriptionExpiresAt: users.subscriptionExpiresAt,
-    })
-    .from(users)
-    .where(eq(users.id, sessionUser.id));
-
-  const row = rows[0];
-
-  if (!row) {
-    console.warn(
-      "[loadAuthUser] User not found in database for ID:",
-      sessionUser.id,
-    );
+  if (!result.user) {
     return fallback;
   }
 
-  const dbRole = (row.role as UserRole | null) ?? "member";
-  const dbSubStatus =
-    (row.subscriptionStatus as "free" | "premium" | "trial" | null) ?? "free";
-
-  const subscriptionStatus: "free" | "paid" | "trial" =
-    dbSubStatus === "premium" ? "paid" : dbSubStatus;
-
-  const loadedUser: AuthUser = {
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    role: dbRole,
-    subscriptionStatus,
-    subscriptionExpiresAt: row.subscriptionExpiresAt?.toISOString() ?? null,
+  return {
+    id: result.user.id,
+    name: result.user.name,
+    email: result.user.email,
+    role: result.user.role,
+    subscriptionStatus: result.user.subscriptionStatus,
+    subscriptionExpiresAt: result.user.subscriptionExpiresAt,
   };
-
-  console.log("[loadAuthUser] Found user in DB:", {
-    id: loadedUser.id,
-    email: loadedUser.email,
-    role: loadedUser.role,
-    roleFromDB: row.role,
-  });
-
-  return loadedUser;
 };
 
 /**
@@ -133,25 +92,7 @@ export async function withAuth<T>(
 
     const user = await loadAuthUser(session.user);
 
-    console.log("[withAuth] Session user ID:", session.user.id);
-    console.log("[withAuth] Loaded user:", {
-      id: user.id,
-      role: user.role,
-      email: user.email,
-    });
-    console.log("[withAuth] Allowed roles:", allowedRoles);
-    console.log(
-      "[withAuth] User role in allowed roles?",
-      allowedRoles.includes(user.role),
-    );
-
     if (!allowedRoles.includes(user.role)) {
-      console.error(
-        "[withAuth] FORBIDDEN - User role:",
-        user.role,
-        "not in allowed roles:",
-        allowedRoles,
-      );
       return {
         success: false,
         error: "You do not have permission to perform this action",

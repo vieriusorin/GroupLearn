@@ -1,6 +1,12 @@
-import { AdminUsersClient } from "@/components/admin/AdminUsersClient";
+import dynamic from "next/dynamic";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getUsers } from "@/presentation/actions/admin";
+
+const AdminUsersClient = dynamic(() =>
+  import("@/components/admin/AdminUsersClient").then((mod) => ({
+    default: mod.AdminUsersClient,
+  })),
+);
 
 export default async function AdminUsersPage() {
   const result = await getUsers();

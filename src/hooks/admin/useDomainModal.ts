@@ -3,14 +3,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { domainFormSchema } from "@/lib/validation";
+import type { DomainExtended } from "@/application/dtos";
+import { domainFormSchema } from "@/lib/shared/validation";
 import { createDomain, updateDomain } from "@/presentation/actions/content";
-import type { Domain } from "@/types/domain";
 
 type DomainFormData = z.infer<typeof domainFormSchema>;
 
 interface UseDomainModalProps {
-  domain: Domain | null;
+  domain: DomainExtended | null;
   onSaved: () => void;
 }
 
@@ -22,8 +22,8 @@ export function useDomainModal({ domain, onSaved }: UseDomainModalProps) {
     () => ({
       name: domain?.name || "",
       description: domain?.description || null,
-      is_public: domain?.is_public === 1,
-      group_id: domain?.group_id || null,
+      is_public: domain?.isPublic || false,
+      group_id: domain?.groupId || null,
     }),
     [domain],
   );
@@ -45,8 +45,8 @@ export function useDomainModal({ domain, onSaved }: UseDomainModalProps) {
     return (
       watchedValues.name.trim() !== domain.name.trim() ||
       (watchedValues.description || "") !== (domain.description || "") ||
-      watchedValues.is_public !== (domain.is_public === 1) ||
-      watchedValues.group_id !== domain.group_id
+      watchedValues.is_public !== domain.isPublic ||
+      watchedValues.group_id !== domain.groupId
     );
   }, [watchedValues, domain]);
 
@@ -55,7 +55,7 @@ export function useDomainModal({ domain, onSaved }: UseDomainModalProps) {
   async function handleSubmit(data: DomainFormData) {
     startTransition(async () => {
       try {
-        let result;
+        let result: any;
         if (domain) {
           result = await updateDomain(
             domain.id,

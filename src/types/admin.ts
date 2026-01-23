@@ -1,7 +1,3 @@
-/**
- * Admin Dashboard Types
- */
-
 export interface AdminStats {
   domains: number;
   categories: number;
@@ -14,17 +10,17 @@ export interface AdminStats {
 export interface RecentGroup {
   id: number;
   name: string;
-  created_at: string;
-  admin_name: string | null;
-  member_count: number;
+  createdAt: string;
+  adminName: string | null;
+  memberCount: number;
 }
 
 export interface RecentDomain {
   id: number;
   name: string;
-  created_at: string;
-  creator_name: string | null;
-  category_count: number;
+  createdAt: string;
+  creatorName: string | null;
+  categoryCount: number;
 }
 
 export interface AdminDashboardData {

@@ -1,22 +1,15 @@
-/**
- * Custom Hook for Category Modal
- * Manages form state, validation, and submission logic for category create/edit
- *
- * Separates business logic from UI presentation following separation of concerns
- */
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { categoryFormSchema } from "@/lib/validation";
+import type { CategoryExtended } from "@/application/dtos";
+import { categoryFormSchema } from "@/lib/shared/validation";
 import { createCategory, updateCategory } from "@/presentation/actions/content";
-import type { Category } from "@/types/category";
 
 type CategoryFormData = z.infer<typeof categoryFormSchema>;
 
 interface UseCategoryModalProps {
-  category: Category | null;
+  category: CategoryExtended | null;
   domainId: number;
   onSaved: () => void;
 }
@@ -26,10 +19,8 @@ export function useCategoryModal({
   domainId,
   onSaved,
 }: UseCategoryModalProps) {
-  // Use React 19 useTransition for mutations
   const [saving, startTransition] = useTransition();
 
-  // Initialize form with default values
   const defaultValues = useMemo<CategoryFormData>(
     () => ({
       name: category?.name || "",
@@ -44,15 +35,12 @@ export function useCategoryModal({
     mode: "onChange",
   });
 
-  // Reset form when category changes
   useEffect(() => {
     form.reset(defaultValues);
   }, [form, defaultValues]);
 
-  // Watch form values to detect changes
   const watchedValues = form.watch();
 
-  // Check if form has changed from original values
   const hasChanges = useMemo((): boolean => {
     if (!category) return true; // For create mode, always allow submission if valid
     return (
@@ -61,15 +49,12 @@ export function useCategoryModal({
     );
   }, [watchedValues, category]);
 
-  // Check if form is valid
   const isFormValid = form.formState.isValid ?? false;
 
-  // Handle form submission
   async function handleSubmit(data: CategoryFormData) {
     startTransition(async () => {
       try {
         if (category) {
-          // Update existing category using Server Action
           const result = await updateCategory(
             category.id,
             data.name.trim(),
@@ -82,7 +67,6 @@ export function useCategoryModal({
             return;
           }
         } else {
-          // Create new category using Server Action
           const result = await createCategory(
             domainId,
             data.name.trim(),
@@ -107,15 +91,10 @@ export function useCategoryModal({
   }
 
   return {
-    // Form instance
     form,
-
-    // State
     saving,
     isFormValid,
     hasChanges,
-
-    // Actions
     onSubmit: handleSubmit,
   };
 }

@@ -1,13 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import {
-  getCachedTotalXP,
-  getCachedXPHistory,
-} from "@/lib/db-operations-paths-critical-converted";
-import type { XPTransaction } from "@/lib/types";
+import type { XpHistoryData } from "@/application/dtos/stats.dto";
+import { queryHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getXPHistoryQuery } from "@/queries/stats/GetXPHistory.query";
 
 const xpHistoryInputSchema = z.object({
   pathId: z.number().int().positive("Path ID must be a positive integer"),
@@ -21,18 +19,6 @@ const xpHistoryInputSchema = z.object({
 
 export type XpHistoryInput = z.infer<typeof xpHistoryInputSchema>;
 
-interface XpHistoryData {
-  transactions: XPTransaction[];
-  total_xp: number;
-  daily_xp: number;
-  weekly_xp: number;
-}
-
-/**
- * Server Action: Get XP transaction history for a path
- *
- * Mirrors the legacy `/api/xp-history` route but exposes it as a typed server action.
- */
 export async function getXpHistory(
   input: XpHistoryInput,
 ): Promise<ActionResult<XpHistoryData>> {
@@ -40,37 +26,12 @@ export async function getXpHistory(
     try {
       const params = xpHistoryInputSchema.parse(input);
 
-      const transactions = await getCachedXPHistory(
-        params.pathId,
-        params.limit,
-      );
-      const totalXP = await getCachedTotalXP(params.pathId);
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayISO = today.toISOString();
-
-      const dailyXP = transactions
-        .filter((t) => t.created_at >= todayISO)
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      weekAgo.setHours(0, 0, 0, 0);
-      const weekAgoISO = weekAgo.toISOString();
-
-      const weeklyXP = transactions
-        .filter((t) => t.created_at >= weekAgoISO)
-        .reduce((sum, t) => sum + t.amount, 0);
+      const query = getXPHistoryQuery(params.pathId, params.limit);
+      const result = await queryHandlers.stats.getXPHistory.execute(query);
 
       return {
         success: true,
-        data: {
-          transactions,
-          total_xp: totalXP,
-          daily_xp: dailyXP,
-          weekly_xp: weeklyXP,
-        },
+        data: result.data,
       };
     } catch (error) {
       return {

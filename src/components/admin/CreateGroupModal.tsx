@@ -57,9 +57,10 @@ export const CreateGroupModal = ({
             className="block text-sm font-medium text-gray-700 mb-1"
           >
             Name{" "}
-            <span className="text-red-500" aria-label="required">
+            <span className="text-red-500" aria-hidden="true">
               *
             </span>
+            <span className="sr-only">(required)</span>
           </label>
           <input
             id="group-name"

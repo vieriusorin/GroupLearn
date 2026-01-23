@@ -19,11 +19,12 @@ export default async function ReviewPage() {
 
   const dueCards = result.data.cards.map((card) => ({
     id: card.id,
-    category_id: 0,
+    categoryId: 0,
     question: card.question,
     answer: card.answer,
     difficulty: card.difficulty,
-    created_at: new Date().toISOString(),
+    createdAt: new Date(),
+    computedDifficulty: null,
   }));
 
   return <ReviewPageClient initialDueCards={dueCards} />;

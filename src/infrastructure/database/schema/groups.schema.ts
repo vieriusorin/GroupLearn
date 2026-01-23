@@ -1,9 +1,3 @@
-/**
- * Groups & Collaboration Schema (PostgreSQL)
- *
- * Tables for group management, invitations, and path assignments.
- */
-
 import {
   boolean,
   integer,
@@ -17,10 +11,6 @@ import { users } from "./auth.schema";
 import { GroupRole, InvitationStatus } from "./enums";
 import { paths } from "./learning-path.schema";
 
-// ============================================
-// Groups Table
-// ============================================
-
 export const groups = pgTable("groups", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
@@ -31,10 +21,6 @@ export const groups = pgTable("groups", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
-
-// ============================================
-// Group Members Table
-// ============================================
 
 export const groupMembers = pgTable("group_members", {
   id: serial("id").primaryKey(),
@@ -55,10 +41,6 @@ export const groupMembers = pgTable("group_members", {
     onDelete: "set null",
   }),
 });
-
-// ============================================
-// Group Invitations Table
-// ============================================
 
 export const groupInvitations = pgTable("group_invitations", {
   id: serial("id").primaryKey(),
@@ -92,10 +74,6 @@ export const groupInvitations = pgTable("group_invitations", {
   acceptedAt: timestamp("accepted_at"),
 });
 
-// ============================================
-// Invitation Paths Table (Many-to-Many)
-// ============================================
-
 export const invitationPaths = pgTable("invitation_paths", {
   id: serial("id").primaryKey(),
   invitationId: integer("invitation_id")
@@ -105,10 +83,6 @@ export const invitationPaths = pgTable("invitation_paths", {
     .notNull()
     .references(() => paths.id, { onDelete: "cascade" }),
 });
-
-// ============================================
-// Group Paths Table (Path Assignments)
-// ============================================
 
 export const groupPaths = pgTable("group_paths", {
   id: serial("id").primaryKey(),
@@ -124,10 +98,6 @@ export const groupPaths = pgTable("group_paths", {
   assignedAt: timestamp("assigned_at").notNull().defaultNow(),
 });
 
-// ============================================
-// Group Path Visibility Table
-// ============================================
-
 export const groupPathVisibility = pgTable("group_path_visibility", {
   id: serial("id").primaryKey(),
   groupId: integer("group_id")
@@ -140,10 +110,6 @@ export const groupPathVisibility = pgTable("group_path_visibility", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
-
-// ============================================
-// Type Exports for TypeScript
-// ============================================
 
 export type Group = typeof groups.$inferSelect;
 export type NewGroup = typeof groups.$inferInsert;

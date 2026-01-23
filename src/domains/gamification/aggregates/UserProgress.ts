@@ -62,20 +62,6 @@ export class HeartsRefilledEvent {
   ) {}
 }
 
-/**
- * UserProgress Aggregate Root
- *
- * Represents a user's progress through a specific learning path.
- * Manages all gamification aspects: XP, hearts, streaks, and position in the path.
- *
- * Aggregate Invariants:
- * - User can only have one progress record per path
- * - XP is always non-negative
- * - Hearts are between 0 and max hearts (5)
- * - Streak count is non-negative
- * - Level is calculated from XP (100 XP per level)
- * - Hearts refill every 4 hours or fully after 24 hours
- */
 export class UserProgress {
   private events: any[] = [];
   private readonly XP_PER_LEVEL = 100;
@@ -103,14 +89,6 @@ export class UserProgress {
     this.validateInvariants();
   }
 
-  /**
-   * Start progress for a new path
-   *
-   * @param userId The user starting the path
-   * @param pathId The path being started
-   * @param groupId Optional group context
-   * @returns New UserProgress aggregate
-   */
   static start(
     userId: UserId,
     pathId: PathId,
@@ -178,12 +156,6 @@ export class UserProgress {
     );
   }
 
-  /**
-   * Award XP for an activity
-   *
-   * @param xpAmount XP to award
-   * @param source Source of the XP (e.g., 'lesson_completion', 'streak_bonus')
-   */
   awardXP(xpAmount: XP, source: string): void {
     const oldLevel = this.getLevel();
     const _oldTotal = this.xp.getAmount();
@@ -209,9 +181,6 @@ export class UserProgress {
     }
   }
 
-  /**
-   * Refill hearts based on time elapsed
-   */
   refillHearts(): void {
     const now = new Date();
     const hoursSinceRefill =
@@ -219,7 +188,6 @@ export class UserProgress {
 
     let heartsToAdd = 0;
 
-    // Full refill after 24 hours
     if (hoursSinceRefill >= this.HEARTS_FULL_REFILL_HOURS) {
       heartsToAdd = 5 - this.hearts.remaining();
       this.hearts = Hearts.create(5);

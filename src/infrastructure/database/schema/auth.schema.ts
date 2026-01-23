@@ -1,10 +1,3 @@
-/**
- * Authentication Schema (PostgreSQL)
- *
- * Tables for user authentication and session management.
- * Compatible with NextAuth/Better Auth standards.
- */
-
 import {
   boolean,
   pgTable,
@@ -18,10 +11,6 @@ import {
   SubscriptionStatus,
   UserRole,
 } from "./enums";
-
-// ============================================
-// Users Table
-// ============================================
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -47,10 +36,6 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
-
-// ============================================
-// Accounts Table (OAuth Providers)
-// ============================================
 
 export const accounts = pgTable("accounts", {
   id: text("id").primaryKey(),
@@ -84,10 +69,6 @@ export const accounts = pgTable("accounts", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// ============================================
-// Sessions Table
-// ============================================
-
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
   token: varchar("token", { length: 255 }).notNull().unique(),
@@ -101,10 +82,6 @@ export const sessions = pgTable("sessions", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// ============================================
-// Verification Table (Better Auth compatible)
-// ============================================
-
 export const verification = pgTable("verification", {
   id: text("id").primaryKey(),
   identifier: varchar("identifier", { length: 255 }).notNull(),
@@ -113,10 +90,6 @@ export const verification = pgTable("verification", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
-
-// ============================================
-// Type Exports for TypeScript
-// ============================================
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;

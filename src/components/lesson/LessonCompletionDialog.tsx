@@ -3,7 +3,8 @@
 import confetti from "canvas-confetti";
 import { Star, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import type { CompleteLessonResult } from "@/application/dtos/learning-path.dto";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,36 +15,53 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+type CompletionResultWithContext = CompleteLessonResult & {
+  unitCompleted: boolean;
+  pathCompleted: boolean;
+  nextLessonId: number | null;
+};
+
 interface LessonCompletionDialogProps {
   lessonId: number;
   isOpen: boolean;
   onClose: () => void;
+  completionResult: CompletionResultWithContext;
 }
 
 export function LessonCompletionDialog({
-  lessonId,
   isOpen,
   onClose,
+  completionResult,
 }: LessonCompletionDialogProps) {
   const router = useRouter();
 
-  // Fetch completion result - in real implementation, this would be passed as prop
-  // For now, we'll show a mock result
-  const mockResult = {
-    xp_earned: 50,
-    completion_bonus: 10,
-    total_xp: 60,
-    accuracy_percent: 100,
-    hearts_remaining: 4,
-    unit_completed: false,
-    path_completed: false,
-    next_lesson_id: null,
-  };
+  // Map completion result to display format
+  const displayData = useMemo(() => {
+    const accuracyPercent = completionResult.accuracy;
+    const xpEarned = completionResult.rewards.baseXP;
+    const completionBonus =
+      completionResult.rewards.accuracyBonus +
+      completionResult.rewards.perfectBonus;
+    const totalXp = completionResult.rewards.totalXP;
+    const heartsRemaining = completionResult.heartsRemaining;
+
+    return {
+      xpEarned,
+      completionBonus,
+      totalXp,
+      accuracyPercent,
+      heartsRemaining,
+      unitCompleted: completionResult.unitCompleted ?? false,
+      pathCompleted: completionResult.pathCompleted ?? false,
+      nextLessonId: completionResult.nextLessonId ?? null,
+      isPerfect: completionResult.isPerfect,
+    };
+  }, [completionResult]);
 
   useEffect(() => {
     if (isOpen) {
       // Trigger confetti
-      if (mockResult.accuracy_percent === 100) {
+      if (displayData.accuracyPercent === 100) {
         // Perfect score - big confetti
         confetti({
           particleCount: 200,
@@ -60,11 +78,16 @@ export function LessonCompletionDialog({
         });
       }
     }
-  }, [isOpen]);
+  }, [isOpen, displayData.accuracyPercent]);
 
   const handleContinue = () => {
     onClose();
-    router.push("/");
+    // Navigate to next lesson if available, otherwise go home
+    if (displayData.nextLessonId) {
+      router.push(`/lesson/${displayData.nextLessonId}`);
+    } else {
+      router.push("/");
+    }
   };
 
   return (
@@ -72,7 +95,7 @@ export function LessonCompletionDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-3xl text-center">
-            {mockResult.accuracy_percent === 100
+            {displayData.accuracyPercent === 100
               ? "🎉 Perfect!"
               : "✨ Lesson Complete!"}
           </DialogTitle>
@@ -86,13 +109,13 @@ export function LessonCompletionDialog({
                 <div className="flex items-center justify-center w-28 h-28 rounded-full bg-background">
                   <div className="text-center">
                     <p className="text-4xl font-bold">
-                      {mockResult.accuracy_percent}%
+                      {displayData.accuracyPercent}%
                     </p>
                     <p className="text-xs text-muted-foreground">Accuracy</p>
                   </div>
                 </div>
               </div>
-              {mockResult.accuracy_percent === 100 && (
+              {displayData.accuracyPercent === 100 && (
                 <Star className="absolute -top-2 -right-2 h-12 w-12 fill-yellow-400 text-yellow-400 animate-pulse" />
               )}
             </div>
@@ -106,18 +129,20 @@ export function LessonCompletionDialog({
                 <span>Lesson XP</span>
               </div>
               <Badge variant="outline" className="text-lg font-bold">
-                +{mockResult.xp_earned} XP
+                +{displayData.xpEarned} XP
               </Badge>
             </div>
 
-            {mockResult.completion_bonus > 0 && (
+            {displayData.completionBonus > 0 && (
               <div className="flex items-center justify-between p-4 rounded-lg bg-secondary">
                 <div className="flex items-center gap-2">
                   <Star className="h-5 w-5 text-yellow-500" />
-                  <span>Perfect Bonus</span>
+                  <span>
+                    {displayData.isPerfect ? "Perfect Bonus" : "Accuracy Bonus"}
+                  </span>
                 </div>
                 <Badge variant="outline" className="text-lg font-bold">
-                  +{mockResult.completion_bonus} XP
+                  +{displayData.completionBonus} XP
                 </Badge>
               </div>
             )}
@@ -125,13 +150,13 @@ export function LessonCompletionDialog({
             <div className="flex items-center justify-between p-4 rounded-lg bg-primary text-primary-foreground">
               <span className="font-bold">Total XP Earned</span>
               <Badge className="text-lg font-bold bg-primary-foreground text-primary">
-                {mockResult.total_xp} XP
+                {displayData.totalXp} XP
               </Badge>
             </div>
           </div>
 
           {/* Perfect Score Message */}
-          {mockResult.accuracy_percent === 100 && (
+          {displayData.accuracyPercent === 100 && (
             <div className="rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950 dark:to-orange-950 p-4 text-center">
               <p className="font-bold text-yellow-700 dark:text-yellow-300">
                 Perfect score! Keep up the great work!
@@ -140,10 +165,19 @@ export function LessonCompletionDialog({
           )}
 
           {/* Unit Completion */}
-          {mockResult.unit_completed && (
+          {displayData.unitCompleted && (
             <div className="rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 p-4 text-center">
               <p className="font-bold text-purple-700 dark:text-purple-300">
                 🎊 Unit Complete! Amazing progress!
+              </p>
+            </div>
+          )}
+
+          {/* Path Completion */}
+          {displayData.pathCompleted && (
+            <div className="rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 p-4 text-center">
+              <p className="font-bold text-green-700 dark:text-green-300">
+                🏆 Path Complete! Congratulations!
               </p>
             </div>
           )}

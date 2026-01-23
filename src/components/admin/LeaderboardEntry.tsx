@@ -1,21 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import type { GroupLeaderboardEntry as LeaderboardEntryType } from "@/application/dtos/groups.dto";
 import { Button } from "@/components/ui/button";
-import type { LeaderboardEntry as LeaderboardEntryType } from "@/lib/analytics";
-import { formatTime } from "@/lib/utils";
+import { formatTime } from "@/lib/shared/utils";
 
 interface LeaderboardEntryProps {
   entry: LeaderboardEntryType;
   groupId: number;
 }
 
-export function LeaderboardEntry({ entry, groupId }: LeaderboardEntryProps) {
+export const LeaderboardEntry = ({ entry, groupId }: LeaderboardEntryProps) => {
   const rankColors = {
-    1: "bg-yellow-100 text-yellow-700",
-    2: "bg-gray-200 text-gray-700",
-    3: "bg-orange-100 text-orange-700",
-    default: "bg-gray-100 text-gray-600",
+    1: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/60 dark:text-yellow-200",
+    2: "bg-muted text-foreground",
+    3: "bg-orange-100 text-orange-800 dark:bg-orange-900/60 dark:text-orange-200",
+    default:
+      "bg-muted text-muted-foreground dark:bg-muted/60 dark:text-muted-foreground",
   };
 
   const rankColor =
@@ -28,29 +29,29 @@ export function LeaderboardEntry({ entry, groupId }: LeaderboardEntryProps) {
           : rankColors.default;
 
   return (
-    <div className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-      <div className="flex items-center gap-4 flex-1">
+    <div className="flex items-center justify-between px-6 py-4 hover:bg-muted/60">
+      <div className="flex flex-1 items-center gap-4">
         <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${rankColor}`}
+          className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${rankColor}`}
         >
           #{entry.rank}
         </div>
         <div className="flex-1">
-          <div className="font-medium text-gray-900">{entry.userName}</div>
-          <div className="text-sm text-gray-600">
+          <div className="font-medium text-foreground">{entry.userName}</div>
+          <div className="text-sm text-muted-foreground">
             {entry.lessonsCompleted} lessons • {formatTime(entry.timeSpent)}
           </div>
         </div>
       </div>
       <div className="flex items-center gap-4">
         {entry.streak > 0 && (
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+          <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800 dark:bg-orange-900/60 dark:text-orange-200">
             🔥 {entry.streak} day streak
           </span>
         )}
         <div className="text-right">
-          <div className="text-lg font-bold text-gray-900">{entry.score}</div>
-          <div className="text-xs text-gray-500">points</div>
+          <div className="text-lg font-bold text-foreground">{entry.score}</div>
+          <div className="text-xs text-muted-foreground">points</div>
         </div>
         <Link
           href={`/admin/groups/${groupId}/members/${entry.userId}/progress`}
@@ -63,4 +64,4 @@ export function LeaderboardEntry({ entry, groupId }: LeaderboardEntryProps) {
       </div>
     </div>
   );
-}
+};

@@ -4,7 +4,7 @@ import { RichTextDisplay } from "@/components/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Flashcard } from "@/lib/types";
+import type { Flashcard } from "@/infrastructure/database/schema";
 
 interface QuizModeProps {
   card: Flashcard;
@@ -33,7 +33,7 @@ export const QuizMode = ({
 
           return (
             <Button
-              key={index}
+              key={option}
               variant={
                 showResult
                   ? isCorrect

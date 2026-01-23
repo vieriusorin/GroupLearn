@@ -1,6 +1,12 @@
-import { AdminCategoriesClient } from "@/components/admin/AdminCategoriesClient";
+import dynamic from "next/dynamic";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getCategories, getDomains } from "@/presentation/actions/content";
+
+const AdminCategoriesClient = dynamic(() =>
+  import("@/components/admin/AdminCategoriesClient").then((mod) => ({
+    default: mod.AdminCategoriesClient,
+  })),
+);
 
 type Category = {
   id: number;
@@ -32,8 +38,8 @@ export default async function AdminCategoriesPage() {
     );
   }
 
-  const firstDomain =
-    domainsResult.data.length > 0 ? domainsResult.data[0] : null;
+  const domains = domainsResult.data.domains || [];
+  const firstDomain = domains.length > 0 ? domains[0] : null;
 
   let initialCategories: Category[] = [];
 
@@ -45,7 +51,7 @@ export default async function AdminCategoriesPage() {
   }
   return (
     <AdminCategoriesClient
-      initialDomains={domainsResult.data}
+      initialDomains={domains}
       initialSelectedDomainId={firstDomain?.id || null}
       initialCategories={initialCategories}
     />

@@ -1,20 +1,40 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import type { DifficultyLevelType } from "@/infrastructure/database/schema";
-import type { AdminFlashcard } from "@/lib/types";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import type { FlashcardAdmin } from "@/application/dtos";
+import type {
+  Category,
+  DifficultyLevelType,
+} from "@/infrastructure/database/schema";
+import { toDate } from "@/lib/shared/date-helpers";
 import {
   deleteFlashcard,
   getCategories,
   getFlashcards,
 } from "@/presentation/actions/content";
-import type { Category } from "@/types/category";
-import { DeleteFlashcardDialog } from "./DeleteFlashcardDialog";
 import { ErrorMessage } from "./ErrorMessage";
-import { FlashcardModal } from "./FlashcardModal";
 import { FlashcardsContent } from "./FlashcardsContent";
 import { FlashcardsHeader } from "./FlashcardsHeader";
 import { FlashcardsSelectors } from "./FlashcardsSelectors";
+
+const DeleteFlashcardDialog = dynamic(
+  () =>
+    import("./DeleteFlashcardDialog").then((mod) => ({
+      default: mod.DeleteFlashcardDialog,
+    })),
+  {
+    ssr: false,
+  },
+);
+
+const FlashcardModal = dynamic(
+  () =>
+    import("./FlashcardModal").then((mod) => ({ default: mod.FlashcardModal })),
+  {
+    ssr: false,
+  },
+);
 
 interface AdminFlashcardsClientProps {
   initialDomains: Array<{
@@ -60,48 +80,62 @@ export function AdminFlashcardsClient({
   );
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingFlashcard, setEditingFlashcard] =
-    useState<AdminFlashcard | null>(null);
+    useState<FlashcardAdmin | null>(null);
   const [flashcardToDelete, setFlashcardToDelete] =
-    useState<AdminFlashcard | null>(null);
+    useState<FlashcardAdmin | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [_isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingFlashcards, setIsLoadingFlashcards] = useState(false);
+
+  // Helper function to map flashcard data
+  const mapFlashcard = useCallback(
+    (
+      f: {
+        id: number;
+        categoryId: number;
+        question: string;
+        answer: string;
+        difficulty: DifficultyLevelType;
+        computedDifficulty: DifficultyLevelType | null;
+        createdAt: string;
+      },
+      index: number,
+    ): FlashcardAdmin => ({
+      id: f.id,
+      categoryId: f.categoryId,
+      question: f.question,
+      answer: f.answer,
+      difficulty: f.difficulty,
+      computedDifficulty: f.computedDifficulty,
+      createdAt: toDate(f.createdAt),
+      displayOrder: index,
+      isActive: true,
+    }),
+    [],
+  );
 
   const [domains] = useState(
     initialDomains.map((d) => ({
       id: d.id,
       name: d.name,
       description: d.description,
-      created_at: d.createdAt,
-      created_by: null,
-      is_public: 1,
-      group_id: null,
+      createdAt: toDate(d.createdAt),
     })),
   );
 
   const [categories, setCategories] = useState<Category[]>(
     initialCategories.map((c) => ({
       id: c.id,
-      domain_id: c.domainId,
+      domainId: c.domainId,
       name: c.name,
       description: c.description,
-      created_at: c.createdAt,
-      display_order: 0,
+      isDeprecated: false,
+      createdAt: toDate(c.createdAt),
     })),
   );
 
-  const [flashcards, setFlashcards] = useState<AdminFlashcard[]>(
-    initialFlashcards.map((f, index) => ({
-      id: f.id,
-      category_id: f.categoryId,
-      question: f.question,
-      answer: f.answer,
-      difficulty: f.difficulty,
-      computed_difficulty: f.computedDifficulty,
-      created_at: f.createdAt,
-      display_order: index,
-      is_active: 1,
-    })),
+  const [flashcards, setFlashcards] = useState<FlashcardAdmin[]>(
+    initialFlashcards.map((f, index) => mapFlashcard(f, index)),
   );
 
   useEffect(() => {
@@ -120,11 +154,11 @@ export function AdminFlashcardsClient({
         if (result.success) {
           const newCategories = result.data.map((c) => ({
             id: c.id,
-            domain_id: c.domainId,
+            domainId: c.domainId,
             name: c.name,
             description: c.description,
-            created_at: c.createdAt,
-            display_order: 0,
+            isDeprecated: c.isDeprecated ?? false,
+            createdAt: toDate(c.createdAt),
           }));
           setCategories(newCategories);
 
@@ -162,17 +196,7 @@ export function AdminFlashcardsClient({
         const result = await getFlashcards(selectedCategoryId);
         if (result.success) {
           setFlashcards(
-            result.data.flashcards.map((f, index) => ({
-              id: f.id,
-              category_id: f.categoryId,
-              question: f.question,
-              answer: f.answer,
-              difficulty: f.difficulty,
-              computed_difficulty: f.computedDifficulty,
-              created_at: f.createdAt,
-              display_order: index,
-              is_active: 1,
-            })),
+            result.data.flashcards.map((f, index) => mapFlashcard(f, index)),
           );
         } else {
           setError(result.error || "Failed to load flashcards");
@@ -185,7 +209,9 @@ export function AdminFlashcardsClient({
         setIsLoadingFlashcards(false);
       }
     });
-  }, [selectedCategoryId]);
+    // mapFlashcard is a stable function that doesn't depend on props/state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategoryId, mapFlashcard]);
 
   const handleDelete = (id: number) => {
     const flashcard = flashcards.find((f) => f.id === id);
@@ -214,17 +240,9 @@ export function AdminFlashcardsClient({
           const flashcardsResult = await getFlashcards(selectedCategoryId);
           if (flashcardsResult.success) {
             setFlashcards(
-              flashcardsResult.data.flashcards.map((f, index) => ({
-                id: f.id,
-                category_id: f.categoryId,
-                question: f.question,
-                answer: f.answer,
-                difficulty: f.difficulty,
-                computed_difficulty: f.computedDifficulty,
-                created_at: f.createdAt,
-                display_order: index,
-                is_active: 1,
-              })),
+              flashcardsResult.data.flashcards.map((f, index) =>
+                mapFlashcard(f, index),
+              ),
             );
           }
         }
@@ -238,7 +256,7 @@ export function AdminFlashcardsClient({
     });
   };
 
-  const handleReorder = async (_reorderedFlashcards: AdminFlashcard[]) => {
+  const handleReorder = async (_reorderedFlashcards: FlashcardAdmin[]) => {
     // TODO: Implement reordering with Server Action
     setError("Reordering not yet implemented in SSR version");
   };
@@ -256,17 +274,7 @@ export function AdminFlashcardsClient({
         const result = await getFlashcards(selectedCategoryId);
         if (result.success) {
           setFlashcards(
-            result.data.flashcards.map((f, index) => ({
-              id: f.id,
-              category_id: f.categoryId,
-              question: f.question,
-              answer: f.answer,
-              difficulty: f.difficulty,
-              computed_difficulty: f.computedDifficulty,
-              created_at: f.createdAt,
-              display_order: index,
-              is_active: 1,
-            })),
+            result.data.flashcards.map((f, index) => mapFlashcard(f, index)),
           );
         }
       });

@@ -19,7 +19,7 @@ import { useState } from "react";
 
 interface SortableItem {
   id: number;
-  display_order: number;
+  displayOrder?: number;
   [key: string]: any;
 }
 
@@ -65,10 +65,10 @@ export function DragDropList<T extends SortableItem>({
 
       const reorderedItems = arrayMove(localItems, oldIndex, newIndex);
 
-      // Update display_order for all items
+      // Update displayOrder for all items
       const updatedItems = reorderedItems.map((item, index) => ({
         ...item,
-        display_order: index + 1,
+        displayOrder: index + 1,
       }));
 
       setLocalItems(updatedItems);

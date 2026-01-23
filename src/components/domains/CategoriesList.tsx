@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Category } from "@/types/category";
+import type { Category } from "@/infrastructure/database/schema";
 
 type Props = {
   selectedDomainId: number | null;

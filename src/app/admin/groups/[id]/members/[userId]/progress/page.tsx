@@ -74,6 +74,7 @@ export default async function MemberProgressPage({
             </div>
             <div className="mt-2">
               <div
+                role="progressbar"
                 className="w-full bg-gray-200 rounded-full h-2"
                 aria-valuenow={Math.min(progress.completionRate, 100)}
                 aria-valuemin={0}
@@ -185,6 +186,7 @@ export default async function MemberProgressPage({
                     </div>
                   </div>
                   <div
+                    role="progressbar"
                     className="w-full bg-gray-200 rounded-full h-2"
                     aria-valuenow={Math.min(path.completionRate, 100)}
                     aria-valuemin={0}

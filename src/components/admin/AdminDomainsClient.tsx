@@ -1,14 +1,30 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import type { Domain } from "@/infrastructure/database/schema";
 import { deleteDomain } from "@/presentation/actions/content";
-import type { Domain } from "@/types/domain";
-import { DeleteDomainDialog } from "./DeleteDomainDialog";
-import { DomainModal } from "./DomainModal";
 import { DomainsContent } from "./DomainsContent";
 import { DomainsHeader } from "./DomainsHeader";
 import { ErrorMessage } from "./ErrorMessage";
+
+const DeleteDomainDialog = dynamic(
+  () =>
+    import("./DeleteDomainDialog").then((mod) => ({
+      default: mod.DeleteDomainDialog,
+    })),
+  {
+    ssr: false,
+  },
+);
+
+const DomainModal = dynamic(
+  () => import("./DomainModal").then((mod) => ({ default: mod.DomainModal })),
+  {
+    ssr: false,
+  },
+);
 
 interface AdminDomainsClientProps {
   initialDomains: Array<{
@@ -31,17 +47,25 @@ export function AdminDomainsClient({
   const [domainToDelete, setDomainToDelete] = useState<Domain | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [domains, _setDomains] = useState<Domain[]>(
+  const [domains, setDomains] = useState<Domain[]>(
     initialDomains.map((d) => ({
       id: d.id,
       name: d.name,
       description: d.description,
-      created_at: d.createdAt,
-      created_by: d.createdBy || null,
-      is_public: 1,
-      group_id: null,
+      createdAt: new Date(d.createdAt),
     })),
   );
+
+  useEffect(() => {
+    setDomains(
+      initialDomains.map((d) => ({
+        id: d.id,
+        name: d.name,
+        description: d.description,
+        createdAt: new Date(d.createdAt),
+      })),
+    );
+  }, [initialDomains]);
 
   const handleDelete = (id: number) => {
     const domain = domains.find((d) => d.id === id);
@@ -77,7 +101,6 @@ export function AdminDomainsClient({
     });
   };
 
-  // Handle modal close
   const handleModalClose = () => {
     setShowCreateModal(false);
     setEditingDomain(null);

@@ -84,7 +84,7 @@ export const InviteModal = ({
               <FormItem>
                 <FormLabel>
                   Email{" "}
-                  <span className="text-destructive" aria-label="required">
+                  <span className="text-destructive" aria-hidden="true">
                     *
                   </span>
                 </FormLabel>
@@ -111,7 +111,7 @@ export const InviteModal = ({
               <FormItem>
                 <FormLabel>
                   Role{" "}
-                  <span className="text-destructive" aria-label="required">
+                  <span className="text-destructive" aria-hidden="true">
                     *
                   </span>
                 </FormLabel>
@@ -158,7 +158,7 @@ export const InviteModal = ({
                       Loading paths...
                     </div>
                   ) : allPaths && allPaths.length > 0 ? (
-                    <div
+                    <section
                       className="max-h-60 overflow-y-auto border rounded-md p-3 space-y-5"
                       aria-label="Learning paths selection"
                     >
@@ -169,31 +169,39 @@ export const InviteModal = ({
                               {domainName}
                             </div>
                             <div className="space-y-1.5 pl-2">
-                              {paths.map((path) => (
-                                <label
-                                  key={path.id}
-                                  className="flex items-center gap-2 cursor-pointer hover:bg-accent p-1.5 rounded transition-colors"
-                                >
-                                  <Checkbox
-                                    checked={field.value.includes(path.id)}
-                                    onCheckedChange={() => {
-                                      field.onChange(
-                                        handlePathToggle(path.id, field.value),
-                                      );
-                                    }}
-                                    disabled={isSending}
-                                    aria-label={`Select ${path.name} path`}
-                                  />
-                                  <span className="text-sm text-foreground">
-                                    {path.name}
-                                  </span>
-                                </label>
-                              ))}
+                              {paths.map((path) => {
+                                const checkboxId = `path-checkbox-${path.id}`;
+                                return (
+                                  <label
+                                    key={path.id}
+                                    htmlFor={checkboxId}
+                                    className="flex items-center gap-2 cursor-pointer hover:bg-accent p-1.5 rounded transition-colors"
+                                  >
+                                    <Checkbox
+                                      id={checkboxId}
+                                      checked={field.value.includes(path.id)}
+                                      onCheckedChange={() => {
+                                        field.onChange(
+                                          handlePathToggle(
+                                            path.id,
+                                            field.value,
+                                          ),
+                                        );
+                                      }}
+                                      disabled={isSending}
+                                      aria-label={`Select ${path.name} path`}
+                                    />
+                                    <span className="text-sm text-foreground">
+                                      {path.name}
+                                    </span>
+                                  </label>
+                                );
+                              })}
                             </div>
                           </div>
                         ),
                       )}
-                    </div>
+                    </section>
                   ) : (
                     <div className="text-sm text-muted-foreground">
                       No paths available

@@ -1,12 +1,6 @@
 import { ValidationError } from "@/domains/shared/errors";
 import { DomainId } from "@/domains/shared/types/branded-types";
 
-/**
- * Domain entity
- *
- * Represents a top-level learning domain (e.g., "Spanish", "Mathematics").
- * Domains contain categories, which in turn contain flashcards.
- */
 export class Domain {
   private constructor(
     public readonly id: DomainId,
@@ -18,27 +12,14 @@ export class Domain {
     this.validate();
   }
 
-  /**
-   * Create a new domain (not yet persisted)
-   */
   static create(
     name: string,
     description: string | null,
     createdBy?: string | null,
   ): Domain {
-    return new Domain(
-      DomainId(0), // ID will be assigned by repository
-      name,
-      description,
-      new Date(),
-      createdBy,
-    );
+    return new Domain(DomainId(0), name, description, new Date(), createdBy);
   }
 
-  /**
-   * Reconstitute domain from database
-   * Use this when loading existing domains from persistence
-   */
   static reconstitute(
     id: DomainId,
     name: string,
@@ -49,38 +30,23 @@ export class Domain {
     return new Domain(id, name, description, createdAt, createdBy);
   }
 
-  /**
-   * Update domain name
-   */
   updateName(newName: string): void {
     this.name = newName;
     this.validate();
   }
 
-  /**
-   * Update domain description
-   */
   updateDescription(newDescription: string | null): void {
     this.description = newDescription;
   }
 
-  /**
-   * Check if domain is new (not yet persisted)
-   */
   isNew(): boolean {
     return this.id.valueOf() === 0;
   }
 
-  /**
-   * Check if domain is owned by specific user
-   */
   isOwnedBy(userId: string): boolean {
     return this.createdBy === userId;
   }
 
-  /**
-   * Validate domain invariants
-   */
   private validate(): void {
     if (!this.name || !this.name.trim()) {
       throw new ValidationError("Domain name cannot be empty");
@@ -96,8 +62,6 @@ export class Domain {
       );
     }
   }
-
-  // Getters
 
   getName(): string {
     return this.name;
@@ -119,9 +83,6 @@ export class Domain {
     return new Date(this.createdAt);
   }
 
-  /**
-   * Convert to plain object for serialization
-   */
   toObject() {
     return {
       id: this.id,

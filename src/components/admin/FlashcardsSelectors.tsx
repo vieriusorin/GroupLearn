@@ -9,8 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Category } from "@/types/category";
-import type { Domain } from "@/types/domain";
+import type { Category, Domain } from "@/infrastructure/database/schema";
 
 interface FlashcardsSelectorsProps {
   domains: Domain[];

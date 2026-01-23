@@ -10,35 +10,18 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import type {
+  PathWithAccess,
+  UserPathsResponse,
+} from "@/application/dtos/admin.dto";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { updateUserPathAccess } from "@/presentation/actions/admin";
 
-interface PathWithAccess {
-  id: number;
-  name: string;
-  description: string | null;
-  icon: string | null;
-  visibility: string;
-  domain_name: string;
-  unit_count: number;
-  isApproved: boolean;
-  isCreated: boolean;
-  isGroupAccessible: boolean;
-  canAccess: boolean;
-  accessType: "created" | "group" | "approved" | "public" | "none";
-}
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
 interface Props {
-  user: User;
+  user: UserPathsResponse["user"];
   paths: PathWithAccess[];
 }
 
@@ -78,10 +61,10 @@ export function AdminUserPathAccessClient({ user, paths }: Props) {
 
   const groupedPaths = filteredPaths.reduce(
     (acc, path) => {
-      if (!acc[path.domain_name]) {
-        acc[path.domain_name] = [];
+      if (!acc[path.domainName]) {
+        acc[path.domainName] = [];
       }
-      acc[path.domain_name].push(path);
+      acc[path.domainName].push(path);
       return acc;
     },
     {} as Record<string, PathWithAccess[]>,
@@ -177,7 +160,7 @@ export function AdminUserPathAccessClient({ user, paths }: Props) {
                               </p>
                             )}
                             <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                              <span>{path.unit_count} units</span>
+                              <span>{path.unitCount} units</span>
                               {path.canAccess && (
                                 <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                                   <CheckCircle2 className="h-3 w-3" />

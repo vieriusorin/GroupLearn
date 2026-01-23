@@ -18,9 +18,6 @@ import { Hearts } from "../value-objects/Hearts";
 import { Streak } from "../value-objects/Streak";
 import { XP } from "../value-objects/XP";
 
-/**
- * Result of completing a lesson
- */
 export interface LessonCompletionResult {
   xpEarned: XP;
   heartsRemaining: Hearts;
@@ -30,17 +27,6 @@ export interface LessonCompletionResult {
   streakMilestone: number | null;
 }
 
-/**
- * UserProgress Entity
- *
- * Represents a user's progress through a specific learning path.
- * Manages XP, hearts, streaks, and current position in the path.
- *
- * Invariants:
- * - XP cannot be negative
- * - Hearts cannot be negative or exceed maximum
- * - Streak cannot be negative
- */
 export class UserProgress {
   private events: Array<
     | XPEarnedEvent
@@ -66,9 +52,6 @@ export class UserProgress {
     this.validate();
   }
 
-  /**
-   * Create new user progress for a path
-   */
   static createNew(userId: UserId, pathId: PathId): UserProgress {
     const now = new Date();
     return new UserProgress(
@@ -86,9 +69,6 @@ export class UserProgress {
     );
   }
 
-  /**
-   * Reconstitute from database
-   */
   static reconstitute(
     id: UserProgressId,
     userId: UserId,
@@ -120,26 +100,15 @@ export class UserProgress {
     );
   }
 
-  /**
-   * Complete a lesson and update progress
-   *
-   * @param lessonId ID of completed lesson
-   * @param accuracy Accuracy achieved
-   * @param xpEarned XP earned from the lesson
-   * @param heartsRemaining Hearts remaining after lesson
-   * @returns Completion result with updated stats
-   */
   completeLesson(
     lessonId: LessonId,
     accuracy: Accuracy,
     xpEarned: XP,
     heartsRemaining: Hearts,
   ): LessonCompletionResult {
-    // Update XP
     const previousXP = this.xp;
     this.xp = this.xp.add(xpEarned);
 
-    // Emit XP earned event
     this.events.push(
       XPEarnedEvent.create(
         this.userId,
@@ -150,15 +119,12 @@ export class UserProgress {
       ),
     );
 
-    // Update hearts
     this.hearts = heartsRemaining;
 
-    // Update streak
     const previousStreak = this.streak.getCount();
     this.streak = this.streak.increment();
     const newStreak = this.streak.getCount();
 
-    // Check for streak milestones
     let streakMilestone: number | null = null;
     const milestones = [3, 7, 14, 30, 100];
     for (const milestone of milestones) {
@@ -180,13 +146,10 @@ export class UserProgress {
       }
     }
 
-    // Update current lesson
     this.currentLessonId = lessonId;
 
-    // Check if leveled up (every 100 XP)
     const leveledUp = this.hasLeveledUp(previousXP, this.xp);
 
-    // Update timestamp
     this.updatedAt = new Date();
 
     return {
@@ -199,18 +162,12 @@ export class UserProgress {
     };
   }
 
-  /**
-   * Advance to a new lesson within a unit
-   */
   advanceToLesson(lessonId: LessonId, unitId: UnitId): void {
     this.currentLessonId = lessonId;
     this.currentUnitId = unitId;
     this.updatedAt = new Date();
   }
 
-  /**
-   * Award XP for a specific reason
-   */
   awardXP(
     amount: XP,
     source: "lesson" | "unit" | "streak" | "perfect",
@@ -229,9 +186,6 @@ export class UserProgress {
     this.updatedAt = new Date();
   }
 
-  /**
-   * Deduct a heart (for incorrect answer)
-   */
   deductHeart(): void {
     this.hearts = this.hearts.deduct();
 
@@ -248,9 +202,6 @@ export class UserProgress {
     this.updatedAt = new Date();
   }
 
-  /**
-   * Refill hearts to maximum
-   */
   refillHearts(
     reason: "daily" | "time" | "purchase" | "reward" = "time",
   ): void {
@@ -273,9 +224,6 @@ export class UserProgress {
     this.updatedAt = new Date();
   }
 
-  /**
-   * Break the current streak (missed a day)
-   */
   breakStreak(): void {
     const previousCount = this.streak.getCount();
 
@@ -289,23 +237,14 @@ export class UserProgress {
     this.updatedAt = new Date();
   }
 
-  /**
-   * Check if hearts are depleted
-   */
   hasNoHearts(): boolean {
     return this.hearts.isEmpty();
   }
 
-  /**
-   * Check if can afford hearts (for purchase)
-   */
   canAffordHearts(cost: XP): boolean {
     return this.xp.isGreaterThan(cost) || this.xp.equals(cost);
   }
 
-  /**
-   * Purchase hearts with XP
-   */
   purchaseHearts(cost: XP): void {
     if (!this.canAffordHearts(cost)) {
       throw new DomainError(
@@ -317,8 +256,6 @@ export class UserProgress {
     this.xp = this.xp.subtract(cost);
     this.refillHearts("purchase");
   }
-
-  // Getters
 
   getXP(): XP {
     return this.xp;
@@ -349,7 +286,6 @@ export class UserProgress {
   }
 
   getLevel(): number {
-    // Every 100 XP = 1 level
     return Math.floor(this.xp.getAmount() / 100);
   }
 
@@ -359,9 +295,6 @@ export class UserProgress {
     return nextLevelXP - this.xp.getAmount();
   }
 
-  /**
-   * Get all domain events
-   */
   getEvents(): ReadonlyArray<
     | XPEarnedEvent
     | HeartsDepletedEvent
@@ -372,25 +305,16 @@ export class UserProgress {
     return [...this.events];
   }
 
-  /**
-   * Clear events (after they've been published)
-   */
   clearEvents(): void {
     this.events = [];
   }
 
-  /**
-   * Check if user leveled up
-   */
   private hasLeveledUp(previousXP: XP, currentXP: XP): boolean {
     const previousLevel = Math.floor(previousXP.getAmount() / 100);
     const currentLevel = Math.floor(currentXP.getAmount() / 100);
     return currentLevel > previousLevel;
   }
 
-  /**
-   * Calculate bonus XP for streak milestone
-   */
   private calculateStreakMilestoneBonus(milestone: number): XP {
     switch (milestone) {
       case 3:
@@ -408,12 +332,7 @@ export class UserProgress {
     }
   }
 
-  /**
-   * Validate invariants
-   */
   private validate(): void {
-    // XP, Hearts, and Streak have their own validation in their value objects
-    // Just verify they exist
     if (!this.xp || !this.hearts || !this.streak) {
       throw new ValidationError(
         "UserProgress must have valid XP, Hearts, and Streak",
@@ -421,9 +340,6 @@ export class UserProgress {
     }
   }
 
-  /**
-   * Convert to plain object for serialization
-   */
   toObject() {
     return {
       id: this.id,

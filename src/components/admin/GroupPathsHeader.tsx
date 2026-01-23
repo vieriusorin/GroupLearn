@@ -24,10 +24,10 @@ export const GroupPathsHeader = ({
             </Button>
           </Link>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-foreground">
           Learning Paths - {groupName}
         </h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-muted-foreground mt-1">
           Manage which paths are available to group members
         </p>
       </div>

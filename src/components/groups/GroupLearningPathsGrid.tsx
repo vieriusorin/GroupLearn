@@ -42,7 +42,7 @@ export const GroupLearningPathsGrid = ({ paths }: Props) => {
 
             <div className="flex items-center justify-between pt-4 border-t">
               <span className="text-sm text-muted-foreground">
-                {path.unit_count || 0} units
+                {path.unitCount || 0} units
               </span>
               <span className="text-sm font-medium text-primary">
                 Start Learning →

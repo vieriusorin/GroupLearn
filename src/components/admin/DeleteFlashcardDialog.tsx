@@ -1,5 +1,6 @@
 "use client";
 
+import type { FlashcardAdmin } from "@/application/dtos";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,10 +11,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { AdminFlashcard } from "@/lib/types";
 
 interface DeleteFlashcardDialogProps {
-  flashcard: AdminFlashcard | null;
+  flashcard: FlashcardAdmin | null;
   isDeleting: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -34,9 +34,8 @@ export const DeleteFlashcardDialog = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Flashcard?</AlertDialogTitle>
           <AlertDialogDescription>
-            {flashcard && (
-              "Are you sure you want to delete this flashcard? This action cannot be undone."
-            )}
+            {flashcard &&
+              "Are you sure you want to delete this flashcard? This action cannot be undone."}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

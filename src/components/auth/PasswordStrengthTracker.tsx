@@ -2,7 +2,7 @@
 
 import { Check, X } from "lucide-react";
 import { useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/shared/utils";
 
 interface PasswordStrengthTrackerProps {
   password: string;
@@ -96,9 +96,9 @@ export const PasswordStrengthTracker = ({
 
       {/* Requirements List */}
       <div className="space-y-1.5">
-        {requirements.map((requirement, index) => (
+        {requirements.map((requirement) => (
           <div
-            key={index}
+            key={requirement.label}
             className={cn(
               "flex items-center gap-2 text-xs transition-colors",
               requirement.met

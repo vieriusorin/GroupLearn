@@ -1,8 +1,8 @@
 "use client";
 
 import { BookOpen } from "lucide-react";
+import type { LessonWithProgress, UnitWithProgress } from "@/application/dtos";
 import { Button } from "@/components/ui/button";
-import type { LessonWithProgress, UnitWithProgress } from "@/lib/types";
 import { DuolingoLessonNode } from "./DuolingoLessonNode";
 
 interface DuolingoUnitNodeProps {
@@ -26,7 +26,7 @@ export function DuolingoUnitNode({
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="text-sm font-bold uppercase tracking-wider opacity-90">
-                Unit {unit.unit_number}
+                Unit {unit.unitNumber}
               </div>
               <h2 className="text-3xl font-black mt-1">{unit.name}</h2>
               {unit.description && (
@@ -45,12 +45,12 @@ export function DuolingoUnitNode({
           <div className="mt-5">
             <div className="flex items-center justify-between text-xs mb-2">
               <span className="font-semibold">Progress</span>
-              <span className="font-bold">{unit.completion_percent}%</span>
+              <span className="font-bold">{unit.completionPercent}%</span>
             </div>
             <div className="h-3 bg-primary-foreground/20 rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary-foreground transition-all duration-500 rounded-full"
-                style={{ width: `${unit.completion_percent}%` }}
+                style={{ width: `${unit.completionPercent}%` }}
               />
             </div>
           </div>
@@ -86,7 +86,7 @@ export function DuolingoUnitNode({
         </div>
 
         {/* Unit completion trophy */}
-        {unit.completion_percent === 100 && (
+        {unit.completionPercent === 100 && (
           <div className="flex justify-center mt-8">
             <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full shadow-xl border-4 border-yellow-300 font-bold text-lg">
               🏆 Unit Complete!

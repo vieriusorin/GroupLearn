@@ -2,8 +2,9 @@
  * Admin Recent Activity Section Component
  */
 
+import type { RecentDomain } from "@/application/dtos/admin.dto";
 import { RecentActivityCard } from "@/components/admin/RecentActivityCard";
-import type { RecentDomain, RecentGroup } from "@/types/admin";
+import type { RecentGroup } from "@/types/admin";
 
 interface AdminRecentActivityProps {
   recentGroups: RecentGroup[];

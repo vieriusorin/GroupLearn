@@ -1,13 +1,10 @@
 "use server";
 
-import { canAccessPath } from "@/lib/authorization";
-import {
-  getCachedLessonsWithProgress,
-  getUnitById,
-} from "@/lib/db-operations-paths-critical-converted";
-import type { LessonWithProgress } from "@/lib/types";
+import type { LessonWithProgress } from "@/application/dtos";
+import { queryHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getLessonsQuery } from "@/queries/paths/GetLessons.query";
 
 export async function getLessons(
   unitId: number,
@@ -21,29 +18,13 @@ export async function getLessons(
       };
     }
 
-    const unit = await getUnitById(unitId);
-    if (!unit) {
-      return {
-        success: false,
-        error: "Unit not found",
-        code: "NOT_FOUND",
-      };
-    }
-
-    const canAccess = await canAccessPath(unit.path_id);
-    if (!canAccess) {
-      return {
-        success: false,
-        error: "Forbidden: You do not have access to this path",
-        code: "FORBIDDEN",
-      };
-    }
-
     try {
-      const lessons = await getCachedLessonsWithProgress(unitId, user.id);
+      const query = getLessonsQuery(user.id, unitId);
+      const result = await queryHandlers.paths.getLessons.execute(query);
+
       return {
         success: true,
-        data: lessons,
+        data: result.lessons,
       };
     } catch (error) {
       return {

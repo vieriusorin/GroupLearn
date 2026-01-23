@@ -1,24 +1,15 @@
 "use server";
 
-import type { GetLessonFlashcardsResponse } from "@/application/use-cases/lesson/GetLessonFlashcardsUseCase";
-import { GetLessonFlashcardsUseCase } from "@/application/use-cases/lesson/GetLessonFlashcardsUseCase";
-import { repositories } from "@/infrastructure/di/container";
+import type { GetLessonFlashcardsResult } from "@/application/dtos/learning-path.dto";
+import { queryHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getLessonFlashcardsQuery } from "@/queries/lesson/GetLessonFlashcards.query";
 
-/**
- * Server Action: Get all flashcards for a lesson
- *
- * This can be used in Server Components for SSR or called from Client Components.
- *
- * @param lessonId - The lesson ID
- * @returns ActionResult with lesson flashcards data or error
- */
 export async function getLessonFlashcards(
   lessonId: number,
-): Promise<ActionResult<GetLessonFlashcardsResponse>> {
+): Promise<ActionResult<GetLessonFlashcardsResult>> {
   return withAuth(["admin", "member"], async (_user) => {
-    // Validate input
     if (!lessonId || lessonId <= 0) {
       return {
         success: false,
@@ -27,14 +18,10 @@ export async function getLessonFlashcards(
       };
     }
 
-    // Execute use case
-    const useCase = new GetLessonFlashcardsUseCase(repositories.lesson);
+    const query = getLessonFlashcardsQuery(lessonId);
+    const result =
+      await queryHandlers.lesson.getLessonFlashcards.execute(query);
 
-    const result = await useCase.execute({
-      lessonId,
-    });
-
-    // Return success
     return {
       success: true,
       data: result,

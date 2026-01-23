@@ -1,31 +1,22 @@
 "use server";
 
-import {
-  getCachedVisiblePathsByDomainWithProgress,
-  getCachedVisiblePathsWithProgress,
-} from "@/lib/db-operations-paths-drizzle";
+import type { PathWithProgress } from "@/application/dtos";
+import { queryHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getPathsQuery } from "@/queries/paths/GetPaths.query";
 
 export async function getPaths(
   domainId?: number,
-): Promise<ActionResult<import("@/lib/types").PathWithProgress[]>> {
+): Promise<ActionResult<PathWithProgress[]>> {
   return withAuth(["admin", "member"], async (user) => {
     try {
-      let paths;
-
-      if (domainId) {
-        paths = await getCachedVisiblePathsByDomainWithProgress(
-          domainId,
-          user.id,
-        );
-      } else {
-        paths = await getCachedVisiblePathsWithProgress(user.id);
-      }
+      const query = getPathsQuery(user.id, domainId);
+      const result = await queryHandlers.paths.getPaths.execute(query);
 
       return {
         success: true,
-        data: paths,
+        data: result.paths,
       };
     } catch (error) {
       return {

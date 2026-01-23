@@ -1,15 +1,33 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import type { CategoryExtended } from "@/application/dtos";
+import { toDate } from "@/lib/shared/date-helpers";
 import { deleteCategory, getCategories } from "@/presentation/actions/content";
-import type { Category } from "@/types/category";
 import { CategoriesContent } from "./CategoriesContent";
 import { CategoriesHeader } from "./CategoriesHeader";
-import { CategoryModal } from "./CategoryModal";
-import { DeleteCategoryDialog } from "./DeleteCategoryDialog";
 import { DomainSelector } from "./DomainSelector";
 import { ErrorMessage } from "./ErrorMessage";
+
+const CategoryModal = dynamic(
+  () =>
+    import("./CategoryModal").then((mod) => ({ default: mod.CategoryModal })),
+  {
+    ssr: false,
+  },
+);
+
+const DeleteCategoryDialog = dynamic(
+  () =>
+    import("./DeleteCategoryDialog").then((mod) => ({
+      default: mod.DeleteCategoryDialog,
+    })),
+  {
+    ssr: false,
+  },
+);
 
 interface AdminCategoriesClientProps {
   initialDomains: Array<{
@@ -33,7 +51,7 @@ export function AdminCategoriesClient({
   initialSelectedDomainId,
   initialCategories,
 }: AdminCategoriesClientProps) {
-  const _router = useRouter();
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   // UI state
@@ -41,12 +59,38 @@ export function AdminCategoriesClient({
     initialSelectedDomainId,
   );
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
-    null,
-  );
+  const [editingCategory, setEditingCategory] =
+    useState<CategoryExtended | null>(null);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<CategoryExtended | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+
+  // Helper function to map category data
+  const mapCategory = useCallback(
+    (
+      c: {
+        id: number;
+        domainId: number;
+        name: string;
+        description: string | null;
+        createdAt: string;
+        isDeprecated?: boolean;
+        flashcardCount?: number;
+      },
+      index?: number,
+    ): CategoryExtended => ({
+      id: c.id,
+      domainId: c.domainId,
+      name: c.name,
+      description: c.description,
+      createdAt: toDate(c.createdAt),
+      isDeprecated: c.isDeprecated ?? false,
+      displayOrder: index,
+      flashcardCount: c.flashcardCount,
+    }),
+    [],
+  );
 
   // Local state
   const [domains] = useState(
@@ -54,22 +98,12 @@ export function AdminCategoriesClient({
       id: d.id,
       name: d.name,
       description: d.description,
-      created_at: d.createdAt,
-      created_by: null,
-      is_public: 1,
-      group_id: null,
+      createdAt: toDate(d.createdAt),
     })),
   );
 
-  const [categories, setCategories] = useState<Category[]>(
-    initialCategories.map((c) => ({
-      id: c.id,
-      domain_id: c.domainId,
-      name: c.name,
-      description: c.description,
-      created_at: c.createdAt,
-      display_order: 0,
-    })),
+  const [categories, setCategories] = useState<CategoryExtended[]>(
+    initialCategories.map((c, index) => mapCategory(c, index)),
   );
 
   useEffect(() => {
@@ -83,14 +117,16 @@ export function AdminCategoriesClient({
         const result = await getCategories(selectedDomainId);
         if (result.success) {
           setCategories(
-            result.data.map((c) => ({
-              id: c.id,
-              domain_id: c.domainId,
-              name: c.name,
-              description: c.description,
-              created_at: c.createdAt,
-              display_order: 0,
-            })),
+            result.data.map((c, index) =>
+              mapCategory(
+                {
+                  ...c,
+                  isDeprecated: c.isDeprecated,
+                  flashcardCount: c.flashcardCount,
+                },
+                index,
+              ),
+            ),
           );
         } else {
           setError(result.error || "Failed to load categories");
@@ -101,7 +137,9 @@ export function AdminCategoriesClient({
         setIsLoadingCategories(false);
       }
     });
-  }, [selectedDomainId]);
+    // mapCategory is a stable function that doesn't depend on props/state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDomainId, mapCategory]);
 
   const handleDelete = (id: number) => {
     const category = categories.find((c) => c.id === id);
@@ -130,14 +168,16 @@ export function AdminCategoriesClient({
           const categoriesResult = await getCategories(selectedDomainId);
           if (categoriesResult.success) {
             setCategories(
-              categoriesResult.data.map((c) => ({
-                id: c.id,
-                domain_id: c.domainId,
-                name: c.name,
-                description: c.description,
-                created_at: c.createdAt,
-                display_order: 0,
-              })),
+              categoriesResult.data.map((c, index) =>
+                mapCategory(
+                  {
+                    ...c,
+                    isDeprecated: c.isDeprecated,
+                    flashcardCount: c.flashcardCount,
+                  },
+                  index,
+                ),
+              ),
             );
           }
         }
@@ -151,7 +191,7 @@ export function AdminCategoriesClient({
     });
   };
 
-  const handleReorder = async (_reorderedCategories: Category[]) => {
+  const handleReorder = async (_reorderedCategories: CategoryExtended[]) => {
     // TODO: Implement reordering with Server Action
     setError("Reordering not yet implemented in SSR version");
   };
@@ -164,17 +204,20 @@ export function AdminCategoriesClient({
         const result = await getCategories(selectedDomainId);
         if (result.success) {
           setCategories(
-            result.data.map((c) => ({
-              id: c.id,
-              domain_id: c.domainId,
-              name: c.name,
-              description: c.description,
-              created_at: c.createdAt,
-              display_order: 0,
-            })),
+            result.data.map((c, index) =>
+              mapCategory(
+                {
+                  ...c,
+                  isDeprecated: c.isDeprecated,
+                  flashcardCount: c.flashcardCount,
+                },
+                index,
+              ),
+            ),
           );
         }
       });
+      router.refresh();
     }
   };
 

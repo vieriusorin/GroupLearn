@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, ChevronDown } from "lucide-react";
+import type { PathWithProgress } from "@/application/dtos";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { PathWithProgress } from "@/lib/types";
 
 interface PathSelectorProps {
   paths: PathWithProgress[];
@@ -40,8 +40,8 @@ export function PathSelector({
                     {selectedPath?.name || "Select Path"}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {selectedPath?.completion_percent}% complete •{" "}
-                    {selectedPath?.total_xp} XP
+                    {selectedPath?.completionPercent}% complete •{" "}
+                    {selectedPath?.totalXp} XP
                   </div>
                 </div>
               </div>
@@ -73,13 +73,13 @@ export function PathSelector({
                     )}
                     <div className="flex items-center gap-3 text-xs">
                       <Badge variant="secondary" className="text-xs">
-                        {path.completion_percent}% complete
+                        {path.completionPercent}% complete
                       </Badge>
                       <span className="text-muted-foreground">
-                        ⚡ {path.total_xp} XP
+                        ⚡ {path.totalXp} XP
                       </span>
                       <span className="text-muted-foreground">
-                        📝 {path.completed_lessons}/{path.total_lessons} lessons
+                        📝 {path.completedLessons}/{path.totalLessons} lessons
                       </span>
                     </div>
                   </div>

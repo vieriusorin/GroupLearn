@@ -1,10 +1,3 @@
-/**
- * Learning Path Schema (PostgreSQL)
- *
- * Tables for paths, units, lessons, and completions.
- * Duolingo-style structured learning system.
- */
-
 import {
   boolean,
   integer,
@@ -17,10 +10,6 @@ import {
 import { users } from "./auth.schema";
 import { domains, flashcards } from "./content.schema";
 import { PathVisibility, UnlockRequirementType } from "./enums";
-
-// ============================================
-// Paths Table (Learning Tracks)
-// ============================================
 
 export const paths = pgTable("paths", {
   id: serial("id").primaryKey(),
@@ -54,10 +43,6 @@ export const paths = pgTable("paths", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// ============================================
-// Path Approvals Table
-// ============================================
-
 export const pathApprovals = pgTable("path_approvals", {
   id: serial("id").primaryKey(),
   pathId: integer("path_id")
@@ -72,10 +57,6 @@ export const pathApprovals = pgTable("path_approvals", {
   approvedAt: timestamp("approved_at").notNull().defaultNow(),
 });
 
-// ============================================
-// Units Table (Groups of Lessons)
-// ============================================
-
 export const units = pgTable("units", {
   id: serial("id").primaryKey(),
   pathId: integer("path_id")
@@ -88,10 +69,6 @@ export const units = pgTable("units", {
   xpReward: integer("xp_reward").notNull().default(10),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
-
-// ============================================
-// Lessons Table (Playable Units)
-// ============================================
 
 export const lessons = pgTable("lessons", {
   id: serial("id").primaryKey(),
@@ -106,10 +83,6 @@ export const lessons = pgTable("lessons", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// ============================================
-// Lesson Flashcards Table (Many-to-Many)
-// ============================================
-
 export const lessonFlashcards = pgTable("lesson_flashcards", {
   id: serial("id").primaryKey(),
   lessonId: integer("lesson_id")
@@ -120,10 +93,6 @@ export const lessonFlashcards = pgTable("lesson_flashcards", {
     .references(() => flashcards.id, { onDelete: "cascade" }),
   orderIndex: integer("order_index").notNull().default(0),
 });
-
-// ============================================
-// Lesson Completions Table (Historical Record)
-// ============================================
 
 export const lessonCompletions = pgTable("lesson_completions", {
   id: serial("id").primaryKey(),
@@ -139,10 +108,6 @@ export const lessonCompletions = pgTable("lesson_completions", {
   timeSpentSeconds: integer("time_spent_seconds"),
   heartsRemaining: integer("hearts_remaining").notNull(),
 });
-
-// ============================================
-// Type Exports for TypeScript
-// ============================================
 
 export type Path = typeof paths.$inferSelect;
 export type NewPath = typeof paths.$inferInsert;

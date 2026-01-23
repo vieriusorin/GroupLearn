@@ -1,4 +1,4 @@
-import { auth as getAuthSession } from "@/lib/auth";
+import { auth as getAuthSession } from "@/lib/auth/auth";
 import type { AuthSession, AuthUser } from "./auth-types";
 
 export const getServerSession = async (): Promise<AuthSession | null> => {

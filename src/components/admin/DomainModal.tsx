@@ -12,8 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { saveDomainAction } from "@/presentation/actions/content";
+import type { DomainModalProps } from "@/presentation/types";
 import type { ActionResult } from "@/presentation/types/action-result";
-import type { DomainModalProps } from "@/types/domain";
 
 type DomainFormState = ActionResult<null>;
 
@@ -61,8 +61,14 @@ export const DomainModal = ({ domain, onClose, onSaved }: DomainModalProps) => {
           {domain && <input type="hidden" name="id" value={domain.id} />}
 
           <div>
-            <label className="block text-sm font-medium mb-1">Name *</label>
+            <label
+              htmlFor="domain-name"
+              className="block text-sm font-medium mb-1"
+            >
+              Name *
+            </label>
             <Input
+              id="domain-name"
               name="name"
               defaultValue={domain?.name ?? ""}
               placeholder="e.g., JavaScript, Biology, Spanish"
@@ -72,10 +78,14 @@ export const DomainModal = ({ domain, onClose, onSaved }: DomainModalProps) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label
+              htmlFor="domain-description"
+              className="block text-sm font-medium mb-1"
+            >
               Description
             </label>
             <Textarea
+              id="domain-description"
               name="description"
               defaultValue={domain?.description ?? ""}
               placeholder="Brief description of this domain"
@@ -87,7 +97,7 @@ export const DomainModal = ({ domain, onClose, onSaved }: DomainModalProps) => {
           <div className="flex items-start space-x-3">
             <Checkbox
               name="is_public"
-              checked={domain?.is_public === 1}
+              checked={false}
               disabled={isPending}
               className="mt-1"
               onCheckedChange={() => {

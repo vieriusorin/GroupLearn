@@ -1,24 +1,19 @@
 "use server";
 
-import { repositories } from "@/infrastructure/di/container";
-import type { ActionResult, AdminDomainDto } from "@/presentation/types";
+import type { GetDomainsResult } from "@/application/dtos/content.dto";
+import { queryHandlers } from "@/infrastructure/di/container";
+import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getDomainsQuery } from "@/queries/content/GetDomains.query";
 
-export async function getDomains(): Promise<ActionResult<AdminDomainDto[]>> {
+export async function getDomains(): Promise<ActionResult<GetDomainsResult>> {
   return withAuth(["admin", "member"], async (_user) => {
-    const domains = await repositories.domain.findAll();
-
-    const domainsData: AdminDomainDto[] = domains.map((domain) => ({
-      id: domain.getId() as number,
-      name: domain.getName(),
-      description: domain.getDescription(),
-      createdAt: domain.getCreatedAt().toISOString(),
-      createdBy: domain.getCreatedBy(),
-    }));
+    const query = getDomainsQuery();
+    const result = await queryHandlers.content.getDomains.execute(query);
 
     return {
       success: true,
-      data: domainsData,
+      data: result,
     };
   });
 }

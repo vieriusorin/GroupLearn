@@ -1,10 +1,3 @@
-/**
- * Gamification Schema (PostgreSQL)
- *
- * Tables for user progress, XP, hearts, and streaks.
- * Duolingo-style gamification system.
- */
-
 import {
   integer,
   pgTable,
@@ -17,10 +10,6 @@ import { users } from "./auth.schema";
 import { HeartsTransactionReason, XPSourceType } from "./enums";
 import { groups } from "./groups.schema";
 import { lessons, paths, units } from "./learning-path.schema";
-
-// ============================================
-// User Progress Table (Aggregate Root)
-// ============================================
 
 export const userProgress = pgTable("user_progress", {
   id: serial("id").primaryKey(),
@@ -51,10 +40,6 @@ export const userProgress = pgTable("user_progress", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// ============================================
-// XP Transactions Table (Audit Trail)
-// ============================================
-
 export const xpTransactions = pgTable("xp_transactions", {
   id: serial("id").primaryKey(),
   userId: text("user_id")
@@ -79,10 +64,6 @@ export const xpTransactions = pgTable("xp_transactions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// ============================================
-// Hearts Transactions Table (Audit Trail)
-// ============================================
-
 export const heartsTransactions = pgTable("hearts_transactions", {
   id: serial("id").primaryKey(),
   userId: text("user_id")
@@ -105,10 +86,6 @@ export const heartsTransactions = pgTable("hearts_transactions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// ============================================
-// Daily Streaks Table
-// ============================================
-
 export const dailyStreaks = pgTable("daily_streaks", {
   id: serial("id").primaryKey(),
   userId: text("user_id")
@@ -121,10 +98,6 @@ export const dailyStreaks = pgTable("daily_streaks", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
-
-// ============================================
-// Type Exports for TypeScript
-// ============================================
 
 export type UserProgress = typeof userProgress.$inferSelect;
 export type NewUserProgress = typeof userProgress.$inferInsert;

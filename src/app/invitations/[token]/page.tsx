@@ -10,7 +10,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -107,7 +114,7 @@ const InvitationPage = () => {
     };
   }, [token]);
 
-  const handleAccept = async () => {
+  const handleAccept = useCallback(() => {
     if (!session) {
       const callbackUrl = `/invitations/${token}`;
       router.push(
@@ -137,7 +144,7 @@ const InvitationPage = () => {
         );
       }
     });
-  };
+  }, [session, token, router]);
 
   const handleSignUpRedirect = () => {
     const callbackUrl = `/invitations/${token}`;
@@ -322,8 +329,8 @@ const InvitationPage = () => {
                     aria-hidden="true"
                   />
                   <span className="text-muted-foreground">
-                    {group?.member_count || 0}{" "}
-                    {group?.member_count === 1 ? "member" : "members"}
+                    {group?.memberCount || 0}{" "}
+                    {group?.memberCount === 1 ? "member" : "members"}
                   </span>
                 </dd>
               </div>

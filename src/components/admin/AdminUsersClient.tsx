@@ -63,19 +63,18 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        Joined {new Date(user.created_at).toLocaleDateString()}
+                        Joined {new Date(user.createdAt).toLocaleDateString()}
                       </div>
                       <div className="flex items-center gap-1">
                         <BookOpen className="h-4 w-4" />
-                        {user.total_accessible_paths ??
-                          user.approved_paths_count}{" "}
+                        {user.totalAccessiblePaths ?? user.approvedPathsCount}{" "}
                         accessible paths
-                        {user.approved_paths_count > 0 && (
+                        {user.approvedPathsCount > 0 && (
                           <span className="text-xs">
-                            ({user.approved_paths_count} approved
-                            {user.group_accessible_paths_count &&
-                            user.group_accessible_paths_count > 0
-                              ? `, ${user.group_accessible_paths_count} via groups`
+                            ({user.approvedPathsCount} approved
+                            {user.groupAccessiblePathsCount &&
+                            user.groupAccessiblePathsCount > 0
+                              ? `, ${user.groupAccessiblePathsCount} via groups`
                               : ""}
                             )
                           </span>
@@ -83,7 +82,7 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        {user.groups_count} groups
+                        {user.groupsCount} groups
                       </div>
                     </div>
                   </div>

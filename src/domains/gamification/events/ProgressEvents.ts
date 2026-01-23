@@ -6,9 +6,6 @@ import type {
 } from "@/domains/shared/types/branded-types";
 import type { XP } from "../value-objects/XP";
 
-/**
- * Event fired when a user's streak is broken
- */
 export class StreakBrokenEvent {
   private constructor(
     public readonly userId: UserId,
@@ -26,9 +23,6 @@ export class StreakBrokenEvent {
   }
 }
 
-/**
- * Event fired when a user's hearts are depleted
- */
 export class HeartsDepletedEvent {
   private constructor(
     public readonly userId: UserId,
@@ -46,9 +40,6 @@ export class HeartsDepletedEvent {
   }
 }
 
-/**
- * Event fired when a user completes a unit
- */
 export class UnitCompletedEvent {
   private constructor(
     public readonly userId: UserId,
@@ -68,9 +59,6 @@ export class UnitCompletedEvent {
   }
 }
 
-/**
- * Event fired when a user completes a path
- */
 export class PathCompletedEvent {
   private constructor(
     public readonly userId: UserId,
@@ -96,9 +84,6 @@ export class PathCompletedEvent {
   }
 }
 
-/**
- * Event fired when XP is earned
- */
 export class XPEarnedEvent {
   private constructor(
     public readonly userId: UserId,
@@ -127,9 +112,6 @@ export class XPEarnedEvent {
   }
 }
 
-/**
- * Event fired when hearts are refilled
- */
 export class HeartsRefilledEvent {
   private constructor(
     public readonly userId: UserId,
@@ -155,9 +137,6 @@ export class HeartsRefilledEvent {
   }
 }
 
-/**
- * Event fired when a streak milestone is reached
- */
 export class StreakMilestoneEvent {
   private constructor(
     public readonly userId: UserId,

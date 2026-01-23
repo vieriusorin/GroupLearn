@@ -1,6 +1,12 @@
-import { AdminDomainsClient } from "@/components/admin/AdminDomainsClient";
+import dynamic from "next/dynamic";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getDomains } from "@/presentation/actions/content";
+
+const AdminDomainsClient = dynamic(() =>
+  import("@/components/admin/AdminDomainsClient").then((mod) => ({
+    default: mod.AdminDomainsClient,
+  })),
+);
 
 export default async function AdminDomainsPage() {
   const result = await getDomains();
@@ -22,5 +28,7 @@ export default async function AdminDomainsPage() {
     );
   }
 
-  return <AdminDomainsClient initialDomains={result.data} />;
+  const domains = result.data.domains || [];
+
+  return <AdminDomainsClient initialDomains={domains} />;
 }

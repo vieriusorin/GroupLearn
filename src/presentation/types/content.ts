@@ -15,6 +15,7 @@ export type AdminCategoryDto = {
   description: string | null;
   isDeprecated: boolean;
   createdAt: string;
+  flashcardCount?: number;
 };
 
 export type AdminFlashcardDto = {

@@ -29,7 +29,7 @@ import { useAssignPathModal } from "@/hooks/admin/useAssignPathModal";
 interface PathWithUnitCount {
   id: number;
   name: string;
-  unit_count?: number;
+  unitCount?: number;
 }
 
 interface AssignPathModalProps {
@@ -98,7 +98,7 @@ export const AssignPathModal = ({
                     <SelectContent>
                       {availablePaths.map((path) => (
                         <SelectItem key={path.id} value={path.id.toString()}>
-                          {path.name} ({path.unit_count || 0} units)
+                          {path.name} ({path.unitCount || 0} units)
                         </SelectItem>
                       ))}
                     </SelectContent>

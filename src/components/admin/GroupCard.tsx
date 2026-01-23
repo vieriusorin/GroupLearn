@@ -34,9 +34,9 @@ export const GroupCard = ({ group, onDelete }: GroupCardProps) => {
         <dl className="space-y-2 mb-4">
           <div className="flex items-center justify-between text-sm">
             <dt className="text-muted-foreground">Members:</dt>
-            <dd className="font-semibold">{group.member_count || 0}</dd>
+            <dd className="font-semibold">{group.memberCount || 0}</dd>
           </div>
-          {(group.pending_invitations || 0) > 0 && (
+          {(group.pendingInvitations || 0) > 0 && (
             <div className="flex items-center justify-between text-sm">
               <dt className="text-muted-foreground">Pending:</dt>
               <dd>
@@ -44,7 +44,7 @@ export const GroupCard = ({ group, onDelete }: GroupCardProps) => {
                   variant="outline"
                   className="text-xs text-yellow-600 dark:text-yellow-400 border-yellow-600/50"
                 >
-                  {group.pending_invitations}
+                  {group.pendingInvitations}
                 </Badge>
               </dd>
             </div>
@@ -52,14 +52,14 @@ export const GroupCard = ({ group, onDelete }: GroupCardProps) => {
           <div className="flex items-center justify-between text-sm">
             <dt className="text-muted-foreground">Creator:</dt>
             <dd className="font-semibold">
-              {group.creator_name || group.admin_name || "Unknown"}
+              {group.creatorName || group.adminName || "Unknown"}
             </dd>
           </div>
           <div className="flex items-center justify-between text-sm">
             <dt className="text-muted-foreground">Created:</dt>
             <dd className="font-semibold">
-              <time dateTime={group.created_at}>
-                {new Date(group.created_at).toLocaleDateString()}
+              <time dateTime={group.createdAt}>
+                {new Date(group.createdAt).toLocaleDateString()}
               </time>
             </dd>
           </div>

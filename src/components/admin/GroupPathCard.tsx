@@ -18,28 +18,25 @@ export const GroupPathCard = ({
   onRemove,
 }: GroupPathCardProps) => {
   return (
-    <article className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
+    <article className="bg-card text-card-foreground rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">{path.name}</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              {path.name}
+            </h3>
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${
-                path.is_visible
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-700"
+                path.isVisible
+                  ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                  : "bg-muted text-muted-foreground"
               }`}
-              aria-label={
-                path.is_visible
-                  ? "Path is visible to members"
-                  : "Path is hidden from members"
-              }
             >
-              {path.is_visible ? "Visible" : "Hidden"}
+              {path.isVisible ? "Visible" : "Hidden"}
             </span>
           </div>
           {path.description && (
-            <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
               {path.description}
             </p>
           )}
@@ -51,20 +48,20 @@ export const GroupPathCard = ({
 
       <dl className="space-y-2 mb-4">
         <div className="flex items-center justify-between text-sm">
-          <dt className="text-gray-500">Units:</dt>
-          <dd className="font-medium text-gray-900">{path.unit_count || 0}</dd>
+          <dt className="text-muted-foreground">Units:</dt>
+          <dd className="font-medium text-foreground">{path.unitCount || 0}</dd>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <dt className="text-gray-500">Assigned by:</dt>
-          <dd className="font-medium text-gray-900">
-            {path.assigned_by_name || "Unknown"}
+          <dt className="text-muted-foreground">Assigned by:</dt>
+          <dd className="font-medium text-foreground">
+            {path.assignedByName || "Unknown"}
           </dd>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <dt className="text-gray-500">Assigned:</dt>
-          <dd className="font-medium text-gray-900">
-            <time dateTime={path.assigned_at}>
-              {new Date(path.assigned_at).toLocaleDateString()}
+          <dt className="text-muted-foreground">Assigned:</dt>
+          <dd className="font-medium text-foreground">
+            <time dateTime={path.assignedAt}>
+              {new Date(path.assignedAt).toLocaleDateString()}
             </time>
           </dd>
         </div>
@@ -75,22 +72,22 @@ export const GroupPathCard = ({
           variant="outline"
           size="sm"
           className="flex-1"
-          onClick={() => onToggleVisibility(path.id, path.is_visible)}
+          onClick={() => onToggleVisibility(path.id, path.isVisible ? 1 : 0)}
           disabled={isTogglingVisibility}
           aria-label={
-            path.is_visible
+            path.isVisible
               ? `Hide ${path.name} from members`
               : `Show ${path.name} to members`
           }
         >
-          {path.is_visible ? "Hide" : "Show"}
+          {path.isVisible ? "Hide" : "Show"}
         </Button>
         <ConfirmDialog
           trigger={
             <Button
               variant="outline"
               size="sm"
-              className="text-red-600 hover:bg-red-50"
+              className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950"
               aria-label={`Remove ${path.name} from group`}
             >
               Remove

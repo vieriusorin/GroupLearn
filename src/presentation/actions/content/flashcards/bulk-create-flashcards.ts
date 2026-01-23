@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidateTag } from "next/cache";
-import type { BulkCreateFlashcardsResponse } from "@/application/use-cases/content/BulkCreateFlashcardsUseCase";
-import { BulkCreateFlashcardsUseCase } from "@/application/use-cases/content/BulkCreateFlashcardsUseCase";
+import type { BulkCreateFlashcardsResult } from "@/application/dtos/content.dto";
+import { bulkCreateFlashcardsCommand } from "@/commands/content/BulkCreateFlashcards.command";
 import type { DifficultyLevelType } from "@/infrastructure/database/schema";
-import { repositories } from "@/infrastructure/di/container";
+import { commandHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
@@ -15,7 +15,7 @@ export async function bulkCreateFlashcards(
     answer: string;
     difficulty?: DifficultyLevelType;
   }>,
-): Promise<ActionResult<BulkCreateFlashcardsResponse>> {
+): Promise<ActionResult<BulkCreateFlashcardsResult>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!categoryId || categoryId <= 0) {
       return {
@@ -33,18 +33,14 @@ export async function bulkCreateFlashcards(
       };
     }
 
-    const useCase = new BulkCreateFlashcardsUseCase(
-      repositories.flashcard,
-      repositories.category,
-    );
-
-    const result = await useCase.execute({
-      userId: user.id,
+    const command = bulkCreateFlashcardsCommand(
+      user.id,
       categoryId,
       flashcards,
-    });
+    );
+    const result =
+      await commandHandlers.content.bulkCreateFlashcards.execute(command);
 
-    // Invalidate dashboard stats cache since flashcard count changed
     revalidateTag("dashboard-stats", { expire: 0 });
 
     return {

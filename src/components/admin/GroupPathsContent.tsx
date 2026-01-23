@@ -7,7 +7,7 @@ import type { GroupPath } from "@/presentation/actions/groups";
 interface GroupPathsContentProps {
   assignedPaths: GroupPath[];
   isTogglingVisibility: boolean;
-  onToggleVisibility: (pathId: number, currentVisibility: number) => void;
+  onToggleVisibility: (pathId: number, currentVisibility: number) => void; // Keep number for backward compatibility with handler
   onRemove: (pathId: number) => void;
   onAssignClick: () => void;
 }

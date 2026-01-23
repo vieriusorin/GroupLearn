@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -10,13 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { DomainSelectorProps } from "@/types/category";
+import type { DomainSelectorProps } from "@/presentation/types";
 
 export function DomainSelector({
   domains,
   selectedDomainId,
   onDomainChange,
 }: DomainSelectorProps) {
+  const router = useRouter();
+
   if (domains.length === 0) {
     return (
       <Card className="border-2 border-yellow-500/50 bg-yellow-500/10">
@@ -27,7 +30,7 @@ export function DomainSelector({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => (window.location.href = "/admin/domains")}
+            onClick={() => router.push("/admin/domains")}
           >
             Go to Domains
           </Button>

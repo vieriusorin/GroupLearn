@@ -4,7 +4,7 @@ import { Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import type { DomainCardProps } from "@/types/domain";
+import type { DomainCardProps } from "@/presentation/types";
 
 export function DomainCard({
   domain,
@@ -30,26 +30,30 @@ export function DomainCard({
         </div>
 
         <div className="space-y-2 mb-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Categories:</span>
-            <span className="font-semibold">{domain.category_count || 0}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Visibility:</span>
-            <Badge
-              variant={domain.is_public ? "default" : "secondary"}
-              className={
-                domain.is_public ? "bg-green-600 hover:bg-green-700" : ""
-              }
-            >
-              {domain.is_public ? "Public" : "Private"}
-            </Badge>
-          </div>
-          {domain.group_id && (
+          {"categoryCount" in domain && domain.categoryCount !== undefined && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Categories:</span>
+              <span className="font-semibold">{domain.categoryCount}</span>
+            </div>
+          )}
+          {"isPublic" in domain && domain.isPublic !== undefined && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Visibility:</span>
+              <Badge
+                variant={domain.isPublic ? "default" : "secondary"}
+                className={
+                  domain.isPublic ? "bg-green-600 hover:bg-green-700" : ""
+                }
+              >
+                {domain.isPublic ? "Public" : "Private"}
+              </Badge>
+            </div>
+          )}
+          {"groupId" in domain && domain.groupId && (
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Group:</span>
               <Badge variant="outline" className="text-xs">
-                Group #{domain.group_id}
+                Group #{domain.groupId}
               </Badge>
             </div>
           )}

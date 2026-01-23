@@ -1,16 +1,16 @@
 "use client";
 
+import type { GroupAnalytics } from "@/application/dtos/groups.dto";
 import { StatCard } from "@/components/admin/StatCard";
-import type { GroupAnalytics } from "@/lib/analytics";
-import { formatTime } from "@/lib/utils";
+import { formatTime } from "@/lib/shared/utils";
 
 interface AnalyticsStatsProps {
   analytics: GroupAnalytics;
 }
 
-export function AnalyticsStats({ analytics }: AnalyticsStatsProps) {
+export const AnalyticsStats = ({ analytics }: AnalyticsStatsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Total Members"
         value={analytics.memberCount}
@@ -40,4 +40,4 @@ export function AnalyticsStats({ analytics }: AnalyticsStatsProps) {
       />
     </div>
   );
-}
+};

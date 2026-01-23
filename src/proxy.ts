@@ -1,10 +1,11 @@
+import { getSessionCookie } from "better-auth/cookies";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/infrastructure/database/drizzle";
 import { users } from "@/infrastructure/database/schema";
-import { auth } from "@/lib/better-auth";
-import type { UserRole } from "@/lib/rbac";
+import { auth } from "@/lib/auth/better-auth";
+import type { UserRole } from "@/lib/auth/rbac";
 
 type AuthUser = {
   id: string;
@@ -42,10 +43,21 @@ const loadUserWithRole = async (
   };
 };
 
-const requiresAuth = (pathname: string): boolean => {
-  const publicRoutes = ["/auth", "/api/auth", "/", "/invitations"];
+const isProtectedRoute = (pathname: string): boolean => {
+  // Keep this in sync with the matcher config below
+  const protectedPrefixes = [
+    "/dashboard",
+    "/lesson",
+    "/review",
+    "/progress",
+    "/settings",
+    "/groups",
+    "/domains",
+    "/flashcards",
+    "/admin",
+  ];
 
-  return !publicRoutes.some((route) => pathname.startsWith(route));
+  return protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
 };
 
 const requiresAdmin = (pathname: string): boolean => {
@@ -55,11 +67,22 @@ const requiresAdmin = (pathname: string): boolean => {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Allow Better Auth API routes and other API handlers to bypass proxy auth
   if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
   }
 
-  if (requiresAuth(pathname)) {
+  if (isProtectedRoute(pathname)) {
+    // Optimistic, cheap check: bail out early if there is no session cookie at all
+    const sessionCookie = getSessionCookie(request);
+
+    if (!sessionCookie) {
+      const signInUrl = new URL("/auth/signin", request.url);
+      signInUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // Full session validation against Better Auth (DB-backed, sliding expiry)
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -98,3 +121,18 @@ export async function proxy(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+export const config = {
+  runtime: "nodejs",
+  matcher: [
+    "/dashboard/:path*",
+    "/lesson/:path*",
+    "/review/:path*",
+    "/progress/:path*",
+    "/settings/:path*",
+    "/groups/:path*",
+    "/domains/:path*",
+    "/flashcards/:path*",
+    "/admin/:path*",
+  ],
+};

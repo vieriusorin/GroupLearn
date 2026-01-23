@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import type { LessonErrorStateProps } from "@/types/lesson";
+import type { LessonErrorStateProps } from "@/presentation/types";
 
 export const LessonErrorState = ({
   title,

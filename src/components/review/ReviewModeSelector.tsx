@@ -1,14 +1,37 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Flashcard, ReviewMode } from "@/lib/types";
-import { FlashcardMode } from "./FlashcardMode";
-import { QuizMode } from "./QuizMode";
-import { RecallMode } from "./RecallMode";
+import type {
+  Flashcard,
+  ReviewModeType,
+} from "@/infrastructure/database/schema";
+
+const FlashcardMode = dynamic(
+  () =>
+    import("./FlashcardMode").then((mod) => ({ default: mod.FlashcardMode })),
+  {
+    ssr: false,
+  },
+);
+
+const QuizMode = dynamic(
+  () => import("./QuizMode").then((mod) => ({ default: mod.QuizMode })),
+  {
+    ssr: false,
+  },
+);
+
+const RecallMode = dynamic(
+  () => import("./RecallMode").then((mod) => ({ default: mod.RecallMode })),
+  {
+    ssr: false,
+  },
+);
 
 interface ReviewModeSelectorProps {
-  mode: ReviewMode;
-  onModeChange: (mode: ReviewMode) => void;
+  mode: ReviewModeType;
+  onModeChange: (mode: ReviewModeType) => void;
   card: Flashcard;
   // Flashcard mode props
   isFlipped: boolean;
@@ -45,16 +68,16 @@ export const ReviewModeSelector = ({
   return (
     <Tabs
       value={mode}
-      onValueChange={(val) => onModeChange(val as ReviewMode)}
+      onValueChange={(val) => onModeChange(val as ReviewModeType)}
       className="mb-6"
     >
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="flashcard">Flashcard</TabsTrigger>
-        <TabsTrigger value="quiz">Quiz</TabsTrigger>
-        <TabsTrigger value="recall">Recall</TabsTrigger>
+        <TabsTrigger value="learn">Flashcard</TabsTrigger>
+        <TabsTrigger value="review">Quiz</TabsTrigger>
+        <TabsTrigger value="cram">Recall</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="flashcard">
+      <TabsContent value="learn">
         <FlashcardMode
           card={card}
           isFlipped={isFlipped}
@@ -64,7 +87,7 @@ export const ReviewModeSelector = ({
         />
       </TabsContent>
 
-      <TabsContent value="quiz">
+      <TabsContent value="review">
         <QuizMode
           card={card}
           options={quizOptions}
@@ -73,7 +96,7 @@ export const ReviewModeSelector = ({
         />
       </TabsContent>
 
-      <TabsContent value="recall">
+      <TabsContent value="cram">
         <RecallMode
           card={card}
           recallAnswer={recallAnswer}

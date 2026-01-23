@@ -3,6 +3,7 @@
 import { BookOpen, Heart, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import type { LessonWithProgress } from "@/application/dtos";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { LessonWithProgress } from "@/lib/types";
 import { startLesson } from "@/presentation/actions/lesson/start-lesson";
 
 interface LessonStartDialogProps {
@@ -64,7 +64,7 @@ export function LessonStartDialog({
     router.push(`/lesson/${lesson.id}`);
   };
 
-  const hasHearts = sessionData && sessionData.hearts_available > 0;
+  const hasHearts = sessionData && sessionData.heartsAvailable > 0;
   const isLoading = isPending || (isOpen && !sessionData && !error);
 
   return (
@@ -95,7 +95,7 @@ export function LessonStartDialog({
                 <span className="font-medium">Hearts</span>
               </div>
               <Badge variant={hasHearts ? "default" : "destructive"}>
-                {sessionData.hearts_available} / 5
+                {sessionData.heartsAvailable} / 5
               </Badge>
             </div>
 
@@ -105,17 +105,17 @@ export function LessonStartDialog({
                 <span className="font-medium">Flashcards</span>
               </div>
               <Badge variant="outline">
-                {sessionData.total_flashcards || 0}
+                {sessionData.totalFlashcards || 0}
               </Badge>
             </div>
 
-            {sessionData.xp_reward && (
+            {sessionData.xpReward && (
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-yellow-500" />
                   <span className="font-medium">XP Reward</span>
                 </div>
-                <Badge variant="outline">+{sessionData.xp_reward} XP</Badge>
+                <Badge variant="outline">+{sessionData.xpReward} XP</Badge>
               </div>
             )}
           </div>

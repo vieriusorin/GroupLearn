@@ -2,31 +2,30 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AssignedPathsCardProps {
   groupId: number;
   totalPaths: number;
 }
 
-export function AssignedPathsCard({
+export const AssignedPathsCard = ({
   groupId,
   totalPaths,
-}: AssignedPathsCardProps) {
+}: AssignedPathsCardProps) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">
-          Assigned Paths ({totalPaths})
-        </h2>
-        <Link href={`/admin/groups/${groupId}/paths`}>
-          <Button variant="outline" size="sm">
-            Manage Paths
-          </Button>
-        </Link>
-      </div>
-      <p className="text-gray-600 text-sm">
-        View detailed analytics for each assigned learning path
-      </p>
-    </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 border-b">
+        <CardTitle className="text-xl">Assigned Paths ({totalPaths})</CardTitle>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/admin/groups/${groupId}/paths`}>Manage Paths</Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">
+          View detailed analytics for each assigned learning path
+        </p>
+      </CardContent>
+    </Card>
   );
-}
+};

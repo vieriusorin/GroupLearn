@@ -8,7 +8,10 @@ import {
   ReviewHeader,
   ReviewModeSelector,
 } from "@/components/review";
-import type { Flashcard, ReviewMode } from "@/lib/types";
+import type {
+  Flashcard,
+  ReviewModeType,
+} from "@/infrastructure/database/schema";
 import { recordReview } from "@/presentation/actions/review";
 
 interface ReviewPageClientProps {
@@ -26,16 +29,16 @@ export function ReviewPageClient({ initialDueCards }: ReviewPageClientProps) {
   const [quizOptions, setQuizOptions] = useState<string[]>([]);
   const [sessionComplete, setSessionComplete] = useState(false);
 
-  const [mode, setMode] = useQueryState<ReviewMode>("mode", {
-    defaultValue: "flashcard",
-    parse: (value) => (value as ReviewMode) || "flashcard",
+  const [mode, setMode] = useQueryState<ReviewModeType>("mode", {
+    defaultValue: "learn",
+    parse: (value) => (value as ReviewModeType) || "learn",
   });
 
   const currentCard = dueCards[currentCardIndex];
 
-  // Generate quiz options when card changes in quiz mode
+  // Generate quiz options when card changes in review mode
   useEffect(() => {
-    if (mode === "quiz" && currentCard && dueCards.length > 1) {
+    if (mode === "review" && currentCard && dueCards.length > 1) {
       const correctAnswer = currentCard.answer;
       const otherAnswers = dueCards
         .filter((c) => c.id !== currentCard.id)
@@ -47,7 +50,7 @@ export function ReviewPageClient({ initialDueCards }: ReviewPageClientProps) {
         () => Math.random() - 0.5,
       );
       setQuizOptions(options);
-    } else if (mode !== "quiz") {
+    } else if (mode !== "review") {
       setQuizOptions([]);
     }
   }, [currentCard, mode, dueCards]);
@@ -105,7 +108,7 @@ export function ReviewPageClient({ initialDueCards }: ReviewPageClientProps) {
   );
 
   const handleModeChange = useCallback(
-    (newMode: ReviewMode) => {
+    (newMode: ReviewModeType) => {
       setMode(newMode);
       resetCardState();
     },

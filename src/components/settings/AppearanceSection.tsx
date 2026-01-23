@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import type { UserPreferences } from "@/lib/preferences";
+import type { UserPreferences } from "@/lib/shared/preferences";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface AppearanceSectionProps {

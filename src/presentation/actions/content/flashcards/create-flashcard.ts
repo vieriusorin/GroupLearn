@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidateTag } from "next/cache";
-import type { CreateFlashcardResponse } from "@/application/use-cases/content/CreateFlashcardUseCase";
-import { CreateFlashcardUseCase } from "@/application/use-cases/content/CreateFlashcardUseCase";
+import type { CreateFlashcardResult } from "@/application/dtos/content.dto";
+import { createFlashcardCommand } from "@/commands/content/CreateFlashcard.command";
 import type { DifficultyLevelType } from "@/infrastructure/database/schema";
-import { repositories } from "@/infrastructure/di/container";
+import { commandHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
@@ -13,7 +13,7 @@ export async function createFlashcard(
   question: string,
   answer: string,
   difficulty?: DifficultyLevelType,
-): Promise<ActionResult<CreateFlashcardResponse["data"]>> {
+): Promise<ActionResult<CreateFlashcardResult["data"]>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!categoryId || categoryId <= 0) {
       return {
@@ -39,20 +39,16 @@ export async function createFlashcard(
       };
     }
 
-    const useCase = new CreateFlashcardUseCase(
-      repositories.flashcard,
-      repositories.category,
-    );
-
-    const result = await useCase.execute({
-      userId: user.id,
+    const command = createFlashcardCommand(
+      user.id,
       categoryId,
-      question: question.trim(),
-      answer: answer.trim(),
-      difficulty: difficulty || "medium",
-    });
+      question.trim(),
+      answer.trim(),
+      difficulty || "medium",
+    );
+    const result =
+      await commandHandlers.content.createFlashcard.execute(command);
 
-    // Invalidate dashboard stats cache since flashcard count changed
     revalidateTag("dashboard-stats", { expire: 0 });
 
     return {

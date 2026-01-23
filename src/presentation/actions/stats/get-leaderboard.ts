@@ -1,15 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import {
-  getCachedTopUsersAllTime,
-  getCachedTopUsersLast7Days,
-  getCachedTopUsersLast30Days,
-  getUserRankWithContext,
-  type LeaderboardEntry,
-} from "@/lib/leaderboard-utils";
+import type { LeaderboardData } from "@/application/dtos/stats.dto";
+import { queryHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getLeaderboardQuery } from "@/queries/stats/GetLeaderboard.query";
 
 const leaderboardInputSchema = z.object({
   period: z.enum(["all-time", "7days", "30days"]).default("all-time"),
@@ -18,18 +14,6 @@ const leaderboardInputSchema = z.object({
 
 export type LeaderboardInput = z.infer<typeof leaderboardInputSchema>;
 
-interface LeaderboardData {
-  period: LeaderboardInput["period"];
-  leaderboard: LeaderboardEntry[];
-  userRank: number | null;
-  userXP: number;
-}
-
-/**
- * Server Action: Get global XP leaderboard
- *
- * Mirrors the legacy `/api/leaderboard` route but exposes it as a typed server action.
- */
 export async function getLeaderboard(
   input?: Partial<LeaderboardInput>,
 ): Promise<ActionResult<LeaderboardData>> {
@@ -40,28 +24,16 @@ export async function getLeaderboard(
         limit: input?.limit,
       });
 
-      let leaderboard: LeaderboardEntry[];
-      switch (params.period) {
-        case "7days":
-          leaderboard = await getCachedTopUsersLast7Days(params.limit);
-          break;
-        case "30days":
-          leaderboard = await getCachedTopUsersLast30Days(params.limit);
-          break;
-        default:
-          leaderboard = await getCachedTopUsersAllTime(params.limit);
-          break;
-      }
-
-      const userContext = await getUserRankWithContext(user.id, null, null, 2);
+      const query = getLeaderboardQuery(user.id, params.period, params.limit);
+      const result = await queryHandlers.stats.getLeaderboard.execute(query);
 
       return {
         success: true,
         data: {
-          period: params.period,
-          leaderboard,
-          userRank: userContext.userRank,
-          userXP: userContext.userXP,
+          period: result.data.period,
+          leaderboard: result.data.leaderboard,
+          userRank: result.data.userRank,
+          userXP: result.data.userXP,
         },
       };
     } catch (error) {

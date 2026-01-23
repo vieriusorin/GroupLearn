@@ -1,14 +1,3 @@
-/**
- * Database Enums for Drizzle Schema
- *
- * This file contains all enum definitions used across the database schemas.
- * These enums provide type safety and consistency across the application.
- */
-
-// ============================================
-// Authentication & User Management
-// ============================================
-
 export const UserRole = {
   MEMBER: "member",
   ADMIN: "admin",
@@ -41,10 +30,6 @@ export const AccountProvider = {
 export type AccountProviderType =
   (typeof AccountProvider)[keyof typeof AccountProvider];
 
-// ============================================
-// Learning Path & Content
-// ============================================
-
 export const PathVisibility = {
   PUBLIC: "public",
   PRIVATE: "private",
@@ -72,10 +57,6 @@ export const DifficultyLevel = {
 export type DifficultyLevelType =
   (typeof DifficultyLevel)[keyof typeof DifficultyLevel];
 
-// ============================================
-// Review & Spaced Repetition
-// ============================================
-
 export const ReviewMode = {
   LEARN: "learn",
   REVIEW: "review",
@@ -83,10 +64,6 @@ export const ReviewMode = {
 } as const;
 
 export type ReviewModeType = (typeof ReviewMode)[keyof typeof ReviewMode];
-
-// ============================================
-// Group & Collaboration
-// ============================================
 
 export const GroupRole = {
   ADMIN: "admin",
@@ -104,10 +81,6 @@ export const InvitationStatus = {
 
 export type InvitationStatusType =
   (typeof InvitationStatus)[keyof typeof InvitationStatus];
-
-// ============================================
-// Gamification & Progress
-// ============================================
 
 export const XPSourceType = {
   LESSON_COMPLETION: "lesson_completion",

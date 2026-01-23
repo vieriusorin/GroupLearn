@@ -2,7 +2,7 @@
 
 import { DomainCard } from "@/components/admin/DomainCard";
 import { EmptyState } from "@/components/admin/EmptyState";
-import type { Domain } from "@/types/domain";
+import type { Domain } from "@/infrastructure/database/schema";
 
 interface DomainsContentProps {
   domains: Domain[];

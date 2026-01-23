@@ -36,14 +36,21 @@ export default async function FlashcardsPage({
 
   const flashcards = result.data.flashcards.map((card, index) => ({
     id: card.id,
-    category_id: card.categoryId,
+    categoryId: card.categoryId,
     question: card.question,
     answer: card.answer,
     difficulty: card.difficulty,
-    computed_difficulty: card.computedDifficulty,
-    created_at: card.createdAt,
-    display_order: index,
-    is_active: 1,
+    computedDifficulty: card.computedDifficulty,
+    createdAt:
+      typeof card.createdAt === "string"
+        ? new Date(card.createdAt)
+        : card.createdAt &&
+            typeof card.createdAt === "object" &&
+            "getTime" in card.createdAt
+          ? (card.createdAt as Date)
+          : new Date(),
+    displayOrder: index,
+    isActive: true,
   }));
 
   return (

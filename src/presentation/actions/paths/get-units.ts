@@ -1,16 +1,15 @@
 "use server";
 
-import { canAccessPath } from "@/lib/authorization";
-import { getCachedUnitsWithProgress } from "@/lib/db-operations-paths-critical-converted";
-import type { UnitWithProgress } from "@/lib/types";
+import type { UnitWithProgress } from "@/application/dtos";
+import { queryHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
+import { getUnitsQuery } from "@/queries/paths/GetUnits.query";
 
 export async function getUnits(
   pathId: number,
 ): Promise<ActionResult<UnitWithProgress[]>> {
   return withAuth(["admin", "member"], async (user) => {
-    // Validate input
     if (!pathId || pathId <= 0) {
       return {
         success: false,
@@ -19,20 +18,13 @@ export async function getUnits(
       };
     }
 
-    const canAccess = await canAccessPath(pathId);
-    if (!canAccess) {
-      return {
-        success: false,
-        error: "Forbidden: You do not have access to this path",
-        code: "FORBIDDEN",
-      };
-    }
-
     try {
-      const units = await getCachedUnitsWithProgress(pathId, user.id);
+      const query = getUnitsQuery(user.id, pathId);
+      const result = await queryHandlers.paths.getUnits.execute(query);
+
       return {
         success: true,
-        data: units,
+        data: result.units,
       };
     } catch (error) {
       return {

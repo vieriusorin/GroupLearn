@@ -20,10 +20,10 @@ interface Path {
   id: number;
   name: string;
   description: string | null;
-  domain_id: number;
-  domain_name?: string;
-  is_public: number;
-  unit_count?: number;
+  domainId: number;
+  domainName?: string;
+  isPublic: boolean;
+  unitCount?: number;
 }
 
 interface Props {

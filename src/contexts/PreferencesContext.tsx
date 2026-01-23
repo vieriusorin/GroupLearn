@@ -6,7 +6,7 @@ import {
   loadPreferences,
   savePreferences,
   type UserPreferences,
-} from "@/lib/preferences";
+} from "@/lib/shared/preferences";
 
 interface PreferencesContextType {
   preferences: UserPreferences;

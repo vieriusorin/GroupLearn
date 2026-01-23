@@ -1,14 +1,7 @@
-/**
- * Custom Hook for Assign Path Modal
- * Manages form state, validation, and submission logic for assigning paths to groups
- *
- * Separates business logic from UI presentation following separation of concerns
- */
-
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { type Resolver, useForm } from "react-hook-form";
 import type { z } from "zod";
-import { assignPathFormSchema } from "@/lib/validation";
+import { assignPathFormSchema } from "@/lib/shared/validation";
 
 type AssignPathFormData = z.infer<typeof assignPathFormSchema>;
 
@@ -22,7 +15,9 @@ export function useAssignPathModal({
   isAssigning,
 }: UseAssignPathModalProps) {
   const form = useForm<AssignPathFormData>({
-    resolver: zodResolver(assignPathFormSchema) as any, // Type mismatch between optional and required isVisible
+    resolver: zodResolver(
+      assignPathFormSchema,
+    ) as unknown as Resolver<AssignPathFormData>,
     defaultValues: {
       pathId: 0, // Will be validated - 0 is invalid
       isVisible: true,
@@ -30,10 +25,8 @@ export function useAssignPathModal({
     mode: "onChange",
   });
 
-  // Check if form is valid
   const isFormValid = form.formState.isValid ?? false;
 
-  // Handle form submission
   async function handleSubmit(data: AssignPathFormData) {
     try {
       await onAssign(data.pathId, data.isVisible);
@@ -47,14 +40,9 @@ export function useAssignPathModal({
   }
 
   return {
-    // Form instance
     form,
-
-    // State
     isAssigning,
     isFormValid,
-
-    // Actions
     onSubmit: form.handleSubmit(handleSubmit),
   };
 }

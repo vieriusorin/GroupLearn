@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import type { FlashcardAdmin } from "@/application/dtos";
 import {
   FlashcardDialog,
   FlashcardsGrid,
   FlashcardsHeader,
 } from "@/components/flashcards";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { AdminFlashcard } from "@/lib/types";
-import { difficultyEnum } from "@/lib/validation";
+import { difficultyEnum } from "@/lib/shared/validation";
 import {
   createFlashcard,
   deleteFlashcard,
@@ -36,7 +36,7 @@ type FlashcardFormData = z.infer<typeof flashcardFormSchema>;
 
 interface FlashcardsPageClientProps {
   categoryId: number;
-  initialFlashcards: AdminFlashcard[];
+  initialFlashcards: FlashcardAdmin[];
 }
 
 export function FlashcardsPageClient({
@@ -46,9 +46,9 @@ export function FlashcardsPageClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [flashcards, setFlashcards] =
-    useState<AdminFlashcard[]>(initialFlashcards);
+    useState<FlashcardAdmin[]>(initialFlashcards);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCard, setEditingCard] = useState<AdminFlashcard | null>(null);
+  const [editingCard, setEditingCard] = useState<FlashcardAdmin | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<FlashcardFormData>({
@@ -87,7 +87,7 @@ export function FlashcardsPageClient({
   );
 
   const handleEdit = useCallback(
-    (card: AdminFlashcard) => {
+    (card: FlashcardAdmin) => {
       setEditingCard(card);
       form.reset({
         id: card.id,
@@ -147,14 +147,22 @@ export function FlashcardsPageClient({
             setFlashcards((prev) => [
               {
                 id: result.data.id,
-                category_id: result.data.categoryId,
+                categoryId: result.data.categoryId,
                 question: result.data.question,
                 answer: result.data.answer,
                 difficulty: result.data.difficulty,
-                computed_difficulty: null,
-                created_at: result.data.createdAt,
-                display_order: prev.length,
-                is_active: 1,
+                computedDifficulty: null,
+                createdAt:
+                  typeof result.data.createdAt === "string"
+                    ? new Date(result.data.createdAt)
+                    : result.data.createdAt &&
+                        typeof result.data.createdAt === "object" &&
+                        result.data.createdAt !== null &&
+                        "getTime" in result.data.createdAt
+                      ? (result.data.createdAt as Date)
+                      : new Date(),
+                displayOrder: prev.length,
+                isActive: true,
               },
               ...prev,
             ]);
@@ -174,7 +182,7 @@ export function FlashcardsPageClient({
   );
 
   const handleDelete = useCallback(
-    async (card: AdminFlashcard) => {
+    async (card: FlashcardAdmin) => {
       setError(null);
 
       startTransition(async () => {

@@ -1,15 +1,15 @@
 "use server";
 
 import { revalidateTag } from "next/cache";
-import type { RefillHeartsResponse } from "@/application/use-cases/progress/RefillHeartsUseCase";
-import { RefillHeartsUseCase } from "@/application/use-cases/progress/RefillHeartsUseCase";
-import { repositories } from "@/infrastructure/di/container";
+import type { RefillHeartsResult } from "@/application/dtos/gamification.dto";
+import { refillHeartsCommand } from "@/commands/progress/RefillHearts.command";
+import { commandHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
 export async function refillHearts(
   pathId: number,
-): Promise<ActionResult<RefillHeartsResponse>> {
+): Promise<ActionResult<RefillHeartsResult>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!pathId || pathId <= 0) {
       return {
@@ -19,12 +19,8 @@ export async function refillHearts(
       };
     }
 
-    const useCase = new RefillHeartsUseCase(repositories.userProgress);
-
-    const result = await useCase.execute({
-      userId: user.id,
-      pathId,
-    });
+    const command = refillHeartsCommand(user.id, pathId);
+    const result = await commandHandlers.progress.refillHearts.execute(command);
 
     revalidateTag("user-progress", { expire: 0 });
     revalidateTag("user-stats", { expire: 0 });

@@ -1,7 +1,7 @@
 "use client";
 
 import type { AuthSession, AuthUser } from "@/domains/auth/auth-types";
-import { authClient } from "@/lib/better-auth-client";
+import { authClient } from "@/lib/auth/better-auth-client";
 
 type Status = "loading" | "authenticated" | "unauthenticated";
 

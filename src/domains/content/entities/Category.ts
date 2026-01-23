@@ -4,12 +4,6 @@ import {
   type DomainId,
 } from "@/domains/shared/types/branded-types";
 
-/**
- * Category entity
- *
- * Represents a category within a domain (e.g., "Verbs" in Spanish domain).
- * Categories organize flashcards into logical groups.
- */
 export class Category {
   private constructor(
     public readonly id: CategoryId,
@@ -22,27 +16,21 @@ export class Category {
     this.validate();
   }
 
-  /**
-   * Create a new category (not yet persisted)
-   */
   static create(
     domainId: DomainId,
     name: string,
     description: string | null,
   ): Category {
     return new Category(
-      CategoryId(0), // ID will be assigned by repository
+      CategoryId(0),
       domainId,
       name,
       description,
-      false, // Not deprecated by default
+      false,
       new Date(),
     );
   }
 
-  /**
-   * Reconstitute category from database
-   */
   static reconstitute(
     id: CategoryId,
     domainId: DomainId,
@@ -61,53 +49,31 @@ export class Category {
     );
   }
 
-  /**
-   * Update category name
-   */
   updateName(newName: string): void {
     this.name = newName;
     this.validate();
   }
 
-  /**
-   * Update category description
-   */
   updateDescription(newDescription: string | null): void {
     this.description = newDescription;
   }
 
-  /**
-   * Mark category as deprecated
-   * Deprecated categories can still be viewed but not used for new flashcards
-   */
   deprecate(): void {
     this.isDeprecated = true;
   }
 
-  /**
-   * Mark category as active (un-deprecate)
-   */
   activate(): void {
     this.isDeprecated = false;
   }
 
-  /**
-   * Check if category is new (not yet persisted)
-   */
   isNew(): boolean {
     return this.id.valueOf() === 0;
   }
 
-  /**
-   * Check if category belongs to a specific domain
-   */
   belongsToDomain(domainId: DomainId): boolean {
     return this.domainId === domainId;
   }
 
-  /**
-   * Validate category invariants
-   */
   private validate(): void {
     if (!this.name || !this.name.trim()) {
       throw new ValidationError("Category name cannot be empty");
@@ -123,8 +89,6 @@ export class Category {
       );
     }
   }
-
-  // Getters
 
   getName(): string {
     return this.name;
@@ -150,9 +114,6 @@ export class Category {
     return new Date(this.createdAt);
   }
 
-  /**
-   * Convert to plain object for serialization
-   */
   toObject() {
     return {
       id: this.id,

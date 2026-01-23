@@ -1,7 +1,7 @@
 "use client";
 
+import type { DashboardStats } from "@/application/dtos";
 import { DomainProgressCard, StatsOverview } from "@/components/progress";
-import type { DashboardStats } from "@/lib/types";
 
 interface ProgressPageClientProps {
   initialStats: DashboardStats;

@@ -17,7 +17,7 @@ import { type ReactNode, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/auth/useAuthSession";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/shared/utils";
 
 interface NavItem {
   href: string;
@@ -133,8 +133,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile Overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+        <button
+          type="button"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden cursor-pointer"
+          aria-label="Close sidebar"
           onClick={() => setSidebarOpen(false)}
         />
       )}

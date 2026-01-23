@@ -1,15 +1,15 @@
 "use server";
 
 import { revalidateTag } from "next/cache";
-import type { UpdateStreakResponse } from "@/application/use-cases/progress/UpdateStreakUseCase";
-import { UpdateStreakUseCase } from "@/application/use-cases/progress/UpdateStreakUseCase";
-import { repositories } from "@/infrastructure/di/container";
+import type { UpdateStreakResult } from "@/application/dtos/gamification.dto";
+import { updateStreakCommand } from "@/commands/progress/UpdateStreak.command";
+import { commandHandlers } from "@/infrastructure/di/container";
 import type { ActionResult } from "@/presentation/types/action-result";
 import { withAuth } from "@/presentation/utils/action-wrapper";
 
 export async function updateStreak(
   pathId: number,
-): Promise<ActionResult<UpdateStreakResponse>> {
+): Promise<ActionResult<UpdateStreakResult>> {
   return withAuth(["admin", "member"], async (user) => {
     if (!pathId || pathId <= 0) {
       return {
@@ -19,12 +19,8 @@ export async function updateStreak(
       };
     }
 
-    const useCase = new UpdateStreakUseCase(repositories.userProgress);
-
-    const result = await useCase.execute({
-      userId: user.id,
-      pathId,
-    });
+    const command = updateStreakCommand(user.id, pathId);
+    const result = await commandHandlers.progress.updateStreak.execute(command);
 
     revalidateTag("user-progress", { expire: 0 });
     revalidateTag("user-stats", { expire: 0 });

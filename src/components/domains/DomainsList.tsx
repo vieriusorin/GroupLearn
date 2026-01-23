@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Domain } from "@/types/domain";
+import type { Domain } from "@/infrastructure/database/schema";
 
 type Props = {
   domains: Domain[];
@@ -43,15 +43,15 @@ export const DomainsList = ({
         ) : (
           <div className="space-y-2">
             {domains.map((domain) => (
-              <div
+              <button
                 key={domain.id}
-                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                type="button"
+                className={`w-full text-left p-3 rounded-lg border cursor-pointer transition-colors ${
                   selectedDomainId === domain.id
                     ? "border-primary bg-primary/5"
                     : "border-border hover:bg-accent"
                 }`}
                 onClick={() => onSelectDomainId(domain.id)}
-                aria-pressed={selectedDomainId === domain.id}
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -81,7 +81,7 @@ export const DomainsList = ({
                     variant="destructive"
                   />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}

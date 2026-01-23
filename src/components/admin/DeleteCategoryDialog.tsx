@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Category } from "@/types/category";
+import type { Category } from "@/infrastructure/database/schema";
 
 interface DeleteCategoryDialogProps {
   category: Category | null;

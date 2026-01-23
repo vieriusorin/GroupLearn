@@ -1,8 +1,3 @@
-/**
- * Invitation Types
- * Types for invitation-related pages and components
- */
-
 export interface InvitationData {
   valid: boolean;
   invitation?: InvitationDetails;
@@ -24,8 +19,8 @@ export interface GroupDetails {
   id: number;
   name: string;
   description: string | null;
-  admin_name: string;
-  member_count: number;
+  adminName: string;
+  memberCount: number;
 }
 
 export interface InviteModalProps {

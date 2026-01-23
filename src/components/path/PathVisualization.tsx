@@ -1,10 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState, useTransition } from "react";
-import { LessonStartDialog } from "@/components/lesson/LessonStartDialog";
-import type { LessonWithProgress, UnitWithProgress } from "@/lib/types";
+import type { LessonWithProgress, UnitWithProgress } from "@/application/dtos";
 import { getLessons, getUnits } from "@/presentation/actions/paths";
 import { DuolingoUnitNode } from "./DuolingoUnitNode";
+
+const LessonStartDialog = dynamic(
+  () =>
+    import("@/components/lesson/LessonStartDialog").then((mod) => ({
+      default: mod.LessonStartDialog,
+    })),
+  {
+    ssr: false,
+  },
+);
 
 interface PathVisualizationProps {
   pathId: number;
@@ -67,7 +77,7 @@ export function PathVisualization({ pathId }: PathVisualizationProps) {
   // Find current lesson (first unlocked + not completed)
   const allLessons = Array.from(lessonsByUnit.values()).flat();
   const currentLessonId = allLessons.find(
-    (l) => l.is_unlocked && !l.is_completed,
+    (l) => l.isUnlocked && !l.isCompleted,
   )?.id;
 
   if (isLoading || isPending) {

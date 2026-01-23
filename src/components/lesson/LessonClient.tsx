@@ -1,21 +1,34 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 import {
   LessonAnswerButtons,
   LessonCard,
-  LessonCompletionDialog,
   LessonHeader,
 } from "@/components/lesson";
+
+const LessonCompletionDialog = dynamic(
+  () =>
+    import("@/components/lesson/LessonCompletionDialog").then((mod) => ({
+      default: mod.LessonCompletionDialog,
+    })),
+  {
+    ssr: false,
+  },
+);
+
+import type { CompleteLessonResult } from "@/application/dtos/learning-path.dto";
 import { Button } from "@/components/ui/button";
-import type { Flashcard } from "@/lib/types";
+import type { Flashcard } from "@/infrastructure/database/schema";
 import { completeLesson } from "@/presentation/actions/lesson/complete-lesson";
+import { getCompletionContext } from "@/presentation/actions/lesson/get-completion-context";
 import { submitAnswer } from "@/presentation/actions/lesson/submit-answer";
 
 export interface LessonAnswer {
-  flashcard_id: number;
-  is_correct: boolean;
+  flashcardId: number;
+  isCorrect: boolean;
 }
 
 /**
@@ -59,6 +72,8 @@ export function LessonClient({
   const [answers, setAnswers] = useState<LessonAnswer[]>([]);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [completionResult, setCompletionResult] =
+    useState<CompleteLessonResult | null>(null);
 
   // Computed values
   const currentCard = useMemo(
@@ -105,8 +120,8 @@ export function LessonClient({
 
           // Record answer locally
           const newAnswer: LessonAnswer = {
-            flashcard_id: currentCard.id,
-            is_correct: isCorrect,
+            flashcardId: currentCard.id,
+            isCorrect: isCorrect,
           };
           const updatedAnswers = [...answers, newAnswer];
           setAnswers(updatedAnswers);
@@ -133,6 +148,32 @@ export function LessonClient({
 
             if (!completeResult.success) {
               console.error("Failed to complete lesson:", completeResult.error);
+              return;
+            }
+
+            // Fetch completion context (unit/path completion, next lesson)
+            const contextResult = await getCompletionContext(lessonId);
+            if (
+              contextResult.success &&
+              contextResult.data &&
+              completeResult.data
+            ) {
+              // Store completion result with context
+              setCompletionResult({
+                ...completeResult.data,
+                // Add context info (we'll map this in the dialog)
+                unitCompleted: contextResult.data.unitCompleted,
+                pathCompleted: contextResult.data.pathCompleted,
+                nextLessonId: contextResult.data.nextLessonId,
+              });
+            } else if (completeResult.data) {
+              // Still show dialog even if context fetch fails
+              setCompletionResult({
+                ...completeResult.data,
+                unitCompleted: false,
+                pathCompleted: false,
+                nextLessonId: null,
+              });
             }
 
             setIsComplete(true);
@@ -157,8 +198,8 @@ export function LessonClient({
           console.error("Error submitting answer:", error);
           // Continue with local state update for better UX
           const newAnswer: LessonAnswer = {
-            flashcard_id: currentCard.id,
-            is_correct: isCorrect,
+            flashcardId: currentCard.id,
+            isCorrect: isCorrect,
           };
           const updatedAnswers = [...answers, newAnswer];
           setAnswers(updatedAnswers);
@@ -263,11 +304,12 @@ export function LessonClient({
         )}
       </main>
 
-      {isComplete && (
+      {isComplete && completionResult && (
         <LessonCompletionDialog
           lessonId={lessonId}
           isOpen={isComplete}
           onClose={handleExit}
+          completionResult={completionResult}
         />
       )}
     </div>

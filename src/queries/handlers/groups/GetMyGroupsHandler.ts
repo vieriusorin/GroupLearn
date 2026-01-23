@@ -1,5 +1,8 @@
 import { count, desc, eq, inArray } from "drizzle-orm";
-import type { GetMyGroupsResult } from "@/application/dtos/groups.dto";
+import type {
+  GetMyGroupsResult,
+  MyGroupListItem,
+} from "@/application/dtos/groups.dto";
 import type { IQueryHandler } from "@/commands/types";
 import {
   groupMembers,

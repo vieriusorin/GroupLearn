@@ -54,7 +54,7 @@ export default async function GroupLearningPage({ params }: Props) {
     );
   }
 
-  const visiblePaths = pathsResult.data.filter((p) => Boolean(p.is_visible));
+  const visiblePaths = pathsResult.data.filter((p) => Boolean(p.isVisible));
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">

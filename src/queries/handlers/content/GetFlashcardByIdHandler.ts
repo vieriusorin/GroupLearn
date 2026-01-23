@@ -25,6 +25,7 @@ export class GetFlashcardByIdHandler
       difficulty: flashcard.getDifficulty() as Flashcard["difficulty"],
       createdAt: flashcard.getCreatedAt(),
       createdBy: null,
+      computedDifficulty: null,
     } as Flashcard;
   }
 }

@@ -24,6 +24,7 @@ export class GetCategoryByIdHandler
       description: category.getDescription(),
       createdAt: category.getCreatedAt(),
       createdBy: null,
+      isDeprecated: false,
     } as Category;
   }
 }

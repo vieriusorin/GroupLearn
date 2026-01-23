@@ -34,6 +34,7 @@ export class DomainService {
   }
 
   static async create(
+    userId: string,
     name: string,
     description: string | null = null,
   ): Promise<Domain> {
@@ -49,18 +50,19 @@ export class DomainService {
       throw new Error("Domain description cannot exceed 500 characters");
     }
 
-    const command = createDomainCommand(trimmedName, description);
+    const command = createDomainCommand(userId, trimmedName, description ?? undefined);
     const result = await commandHandlers.content.createDomain.execute(command);
     return {
-      id: result.id,
-      name: result.name,
-      description: result.description,
-      createdAt: new Date(result.createdAt),
-      createdBy: result.createdBy,
+      id: result.data.id,
+      name: result.data.name,
+      description: result.data.description,
+      createdAt: new Date(result.data.createdAt),
+      createdBy: result.data.createdBy ?? null,
     } as Domain;
   }
 
   static async update(
+    userId: string,
     id: number,
     name: string,
     description: string | null,
@@ -79,12 +81,12 @@ export class DomainService {
       throw new Error("Domain description cannot exceed 500 characters");
     }
 
-    const command = updateDomainCommand(id, trimmedName, description);
+    const command = updateDomainCommand(userId, id, trimmedName, description ?? undefined);
     await commandHandlers.content.updateDomain.execute(command);
     return DomainService.getById(id);
   }
 
-  static async delete(id: number, cascade: boolean = false): Promise<void> {
+  static async delete(userId: string, id: number, cascade: boolean = false): Promise<void> {
     await DomainService.getById(id);
 
     if (!cascade) {
@@ -98,7 +100,7 @@ export class DomainService {
       }
     }
 
-    const command = deleteDomainCommand(id);
+    const command = deleteDomainCommand(userId, id);
     await commandHandlers.content.deleteDomain.execute(command);
   }
 

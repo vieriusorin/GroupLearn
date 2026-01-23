@@ -15,5 +15,5 @@ export default async function DomainsPage() {
     );
   }
 
-  return <DomainsClient initialDomains={domainsResult.data} />;
+  return <DomainsClient initialDomains={domainsResult.data.domains} />;
 }

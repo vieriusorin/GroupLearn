@@ -55,9 +55,9 @@ export default async function AdminGroupPathsPage({
     id: p.id,
     name: p.name,
     description: p.description,
-    domain_id: p.domainId,
-    is_public: p.visibility === "public" ? 1 : 0,
-    unit_count: p.totalUnits,
+    domainId: p.domainId,
+    isPublic: p.visibility === "public",
+    unitCount: p.totalUnits,
   }));
 
   return (

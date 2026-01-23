@@ -16,7 +16,7 @@ import type { DifficultyLevelType } from "@/infrastructure/database/schema/enums
 
 export interface StartLessonResult
   extends Omit<StartLessonResponse, "totalFlashcards" | "xpReward"> {
-  reviewMode: ReviewMode;
+  reviewMode: "learn" | "review" | "cram";
 }
 
 export class StartLessonHandler
@@ -83,6 +83,7 @@ export class StartLessonHandler
       answer: f.getAnswer(),
       difficulty: f.getDifficulty() as DifficultyLevelType,
       createdAt: f.getCreatedAt().toISOString(),
+      computedDifficulty: null,
     }));
 
     if (!command.lesson || !command.unit || !command.path) {
@@ -124,13 +125,21 @@ export class StartLessonHandler
         isLocked: command.path.isLocked,
         unlockRequirementType: command.path.unlockRequirementType,
         unlockRequirementValue: command.path.unlockRequirementValue,
-        visibility: command.path.visibility,
+        visibility: command.path.visibility as "public" | "private",
         createdBy: command.path.createdBy,
         createdAt: command.path.createdAt,
       },
       flashcards: flashcardsData,
       heartsAvailable: session.getHearts().remaining(),
-      reviewMode: session.getReviewMode(),
+      reviewMode: this.mapReviewMode(session.getReviewMode()),
     };
+  }
+
+  private mapReviewMode(mode: ReviewMode): "learn" | "review" | "cram" {
+    // Map domain ReviewMode to DTO ReviewMode
+    if (mode === "flashcard") return "learn";
+    if (mode === "quiz") return "review";
+    if (mode === "recall") return "cram";
+    return "learn"; // default
   }
 }

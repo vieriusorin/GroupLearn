@@ -154,12 +154,7 @@ export async function startLesson(
         computedDifficulty: null,
       })),
       heartsAvailable: result.heartsAvailable,
-      reviewMode:
-        result.reviewMode === "flashcard"
-          ? "learn"
-          : result.reviewMode === "quiz"
-            ? "review"
-            : "cram",
+      reviewMode: result.reviewMode,
       totalFlashcards: result.flashcards.length,
       xpReward: result.lesson.xpReward,
     };

@@ -1,5 +1,8 @@
 import { and, asc, eq, or, sql } from "drizzle-orm";
-import type { GetUserPathsResult } from "@/application/dtos/admin.dto";
+import type {
+  GetUserPathsResult,
+  PathWithAccess,
+} from "@/application/dtos/admin.dto";
 import type { IQueryHandler } from "@/commands/types";
 import { DomainError } from "@/domains/shared/errors";
 import { db } from "@/infrastructure/database/drizzle";

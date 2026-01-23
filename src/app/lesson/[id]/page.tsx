@@ -52,9 +52,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
     createdAt:
       typeof f.createdAt === "string"
         ? new Date(f.createdAt)
-        : f.createdAt instanceof Date
-          ? f.createdAt
-          : new Date(),
+        : new Date(f.createdAt),
   }));
 
   return (

@@ -1,5 +1,8 @@
 import { and, count, desc, eq, inArray } from "drizzle-orm";
-import type { GetAssignedPathsResult } from "@/application/dtos/groups.dto";
+import type {
+  GetAssignedPathsResult,
+  GroupPathListItem,
+} from "@/application/dtos/groups.dto";
 import type { IQueryHandler } from "@/commands/types";
 import { DomainError } from "@/domains/shared/errors";
 import { users } from "@/infrastructure/database/schema/auth.schema";

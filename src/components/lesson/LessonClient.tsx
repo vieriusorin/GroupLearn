@@ -26,6 +26,12 @@ import { completeLesson } from "@/presentation/actions/lesson/complete-lesson";
 import { getCompletionContext } from "@/presentation/actions/lesson/get-completion-context";
 import { submitAnswer } from "@/presentation/actions/lesson/submit-answer";
 
+type CompletionResultWithContext = CompleteLessonResult & {
+  unitCompleted: boolean;
+  pathCompleted: boolean;
+  nextLessonId: number | null;
+};
+
 export interface LessonAnswer {
   flashcardId: number;
   isCorrect: boolean;
@@ -73,7 +79,7 @@ export function LessonClient({
   const [showAnswer, setShowAnswer] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [completionResult, setCompletionResult] =
-    useState<CompleteLessonResult | null>(null);
+    useState<CompletionResultWithContext | null>(null);
 
   // Computed values
   const currentCard = useMemo(

@@ -3,6 +3,7 @@ import type { CompleteLessonCommand } from "@/commands/lesson/CompleteLesson.com
 import type { ICommandHandler } from "@/commands/types";
 import { UserProgress } from "@/domains/gamification/aggregates/UserProgress";
 import type { IUserProgressRepository } from "@/domains/gamification/repositories/IUserProgressRepository";
+import { XP } from "@/domains/gamification/value-objects/XP";
 import { LessonCompletion } from "@/domains/learning-path/entities/LessonCompletion";
 import type { ILessonCompletionRepository } from "@/domains/learning-path/repositories/ILessonCompletionRepository";
 import type { ISessionRepository } from "@/domains/learning-path/repositories/ISessionRepository";
@@ -65,11 +66,14 @@ export class CompleteLessonHandler
       userProgress = UserProgress.start(userId, pathId);
     }
 
+    const xpEarned = XP.fromAmount(xpCalculation.totalXP);
+    const heartsRemaining = session.getHearts();
+
     userProgress.completeLesson(
       lessonId,
       accuracy,
-      xpCalculation.totalXP,
-      session.getHearts(),
+      xpEarned,
+      heartsRemaining,
     );
     userProgress.refillHearts();
 
@@ -79,9 +83,9 @@ export class CompleteLessonHandler
       userId,
       lessonId,
       accuracy,
-      xpCalculation.totalXP,
+      xpEarned,
       command.timeSpentSeconds,
-      session.getHearts(),
+      heartsRemaining,
       command.isPerfect,
     );
     await this.lessonCompletionRepository.save(completion);
@@ -95,7 +99,7 @@ export class CompleteLessonHandler
       lessonId: command.lessonId,
       accuracy: accuracyPercent,
       xpEarned: xpCalculation.totalXP,
-      heartsRemaining: session.getHearts(),
+      heartsRemaining: heartsRemaining.remaining(),
       isPerfect: session.isPerfect(),
       cardsReviewed: command.cardsReviewed,
       timeSpentSeconds: command.timeSpentSeconds,

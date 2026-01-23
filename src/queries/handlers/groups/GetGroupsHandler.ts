@@ -1,5 +1,8 @@
 import { and, count, desc, eq, inArray } from "drizzle-orm";
-import type { GetGroupsResult } from "@/application/dtos/groups.dto";
+import type {
+  GetGroupsResult,
+  GroupListItem,
+} from "@/application/dtos/groups.dto";
 import type { IQueryHandler } from "@/commands/types";
 import { db } from "@/infrastructure/database/drizzle";
 import { users } from "@/infrastructure/database/schema/auth.schema";

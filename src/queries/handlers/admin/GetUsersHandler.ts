@@ -1,5 +1,8 @@
 import { and, desc, eq, or, sql } from "drizzle-orm";
-import type { GetUsersResult } from "@/application/dtos/admin.dto";
+import type {
+  AdminUser,
+  GetUsersResult,
+} from "@/application/dtos/admin.dto";
 import type { IQueryHandler } from "@/commands/types";
 import { db } from "@/infrastructure/database/drizzle";
 import {

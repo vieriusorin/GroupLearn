@@ -37,9 +37,9 @@ export async function deleteCategory(
 
     // Revalidate cache tags
     if (domainId) {
-      revalidateTag(CACHE_TAGS.categories(domainId));
+      revalidateTag(CACHE_TAGS.categories(domainId), "default");
     }
-    revalidateTag(CACHE_TAGS.categoriesAll);
+    revalidateTag(CACHE_TAGS.categoriesAll, "default");
 
     return {
       success: true,

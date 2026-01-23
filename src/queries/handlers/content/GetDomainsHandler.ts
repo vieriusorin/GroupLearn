@@ -17,7 +17,7 @@ export class GetDomainsHandler
         name: domain.getName(),
         description: domain.getDescription(),
         createdAt: domain.getCreatedAt().toISOString(),
-        createdBy: domain.getCreatedBy(),
+        createdBy: domain.getCreatedBy() ?? null,
       })),
     };
   }

@@ -156,4 +156,28 @@ export class XPCalculationService {
 
     return total;
   }
+
+  /**
+   * Calculate accuracy bonus based on accuracy percentage
+   *
+   * @param baseXP Base XP reward
+   * @param accuracyPercent Accuracy percentage (0-100)
+   * @returns Accuracy bonus amount
+   */
+  calculateAccuracyBonus(baseXP: number, accuracyPercent: number): number {
+    if (accuracyPercent >= 100) return 15; // Perfect bonus
+    if (accuracyPercent >= 90) return 10; // High accuracy bonus
+    if (accuracyPercent >= 80) return 5; // Good accuracy bonus
+    return 0;
+  }
+
+  /**
+   * Calculate perfect bonus (no mistakes at all)
+   *
+   * @param baseXP Base XP reward
+   * @returns Perfect bonus amount
+   */
+  calculatePerfectBonus(baseXP: number): number {
+    return 10; // Extra bonus for flawless completion
+  }
 }

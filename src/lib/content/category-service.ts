@@ -38,6 +38,7 @@ export class CategoryService {
       description: cat.description,
       createdAt: new Date(cat.createdAt),
       createdBy: null,
+      isDeprecated: false,
     })) as Category[];
 
     if (page === undefined || limit === undefined) {
@@ -65,11 +66,14 @@ export class CategoryService {
   }
 
   static async create(
+    userId: string,
     domainId: number,
     name: string,
     description: string | null = null,
   ): Promise<Category> {
-    const domain = await getDomainById(domainId);
+    const domainQuery = getDomainByIdQuery(domainId);
+    const domain =
+      await queryHandlers.content.getDomainById.execute(domainQuery);
     if (!domain) {
       throw new Error(`Domain with ID ${domainId} not found`);
     }
@@ -88,20 +92,22 @@ export class CategoryService {
       throw new Error("Category description cannot exceed 500 characters");
     }
 
-    const command = createCategoryCommand(domainId, trimmedName, description);
+    const command = createCategoryCommand(userId, domainId, trimmedName, description);
     const result =
       await commandHandlers.content.createCategory.execute(command);
     return {
-      id: result.id,
-      domainId: result.domainId,
-      name: result.name,
-      description: result.description,
-      createdAt: new Date(result.createdAt),
+      id: result.data.id,
+      domainId: result.data.domainId,
+      name: result.data.name,
+      description: result.data.description,
+      createdAt: new Date(result.data.createdAt),
       createdBy: null,
+      isDeprecated: false,
     } as Category;
   }
 
   static async update(
+    userId: string,
     id: number,
     name: string,
     description: string | null,
@@ -120,12 +126,12 @@ export class CategoryService {
       throw new Error("Category description cannot exceed 500 characters");
     }
 
-    const command = updateCategoryCommand(id, trimmedName, description);
+    const command = updateCategoryCommand(userId, id, trimmedName, description);
     await commandHandlers.content.updateCategory.execute(command);
     return CategoryService.getById(id);
   }
 
-  static async delete(id: number): Promise<void> {
+  static async delete(userId: string, id: number): Promise<void> {
     await CategoryService.getById(id);
 
     const flashcardsQuery = getFlashcardsQuery(id);
@@ -137,7 +143,7 @@ export class CategoryService {
       );
     }
 
-    const command = deleteCategoryCommand(id);
+    const command = deleteCategoryCommand(userId, id);
     await commandHandlers.content.deleteCategory.execute(command);
   }
 

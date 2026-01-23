@@ -1,5 +1,8 @@
 import { count, eq } from "drizzle-orm";
-import type { CreateGroupResult } from "@/application/dtos/groups.dto";
+import type {
+  CreateGroupResult,
+  GroupListItem,
+} from "@/application/dtos/groups.dto";
 import type { CreateGroupCommand } from "@/commands/groups/CreateGroup.command";
 import type { ICommandHandler } from "@/commands/types";
 import { DomainError } from "@/domains/shared/errors";

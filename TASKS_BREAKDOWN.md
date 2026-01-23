@@ -8,71 +8,95 @@
 ## Phase 0: Infrastructure Foundations
 
 ### 0.1.1: Evaluate and Choose Real-Time Provider
-**Status**: 🔴 Not Started
+**Status**: 🟢 Completed
 **Priority**: P0 (Critical)
 **Estimated Time**: 4 hours
 **Dependencies**: None
 
 **Acceptance Criteria**:
-- [ ] Research document comparing Socket.io, Supabase Realtime, Ably, Pusher
-- [ ] Decision matrix with criteria: cost, latency, DX, scalability, auth integration
-- [ ] Final recommendation with justification
+- [x] Research document comparing Socket.io, Supabase Realtime, Ably, Pusher
+- [x] Decision matrix with criteria: cost, latency, DX, scalability, auth integration
+- [x] Final recommendation with justification
 - [ ] Proof of concept: Simple presence system working
 
-**Implementation Notes**:
-```md
-Evaluation Criteria:
-1. Cost: Free tier limits, pricing beyond free tier
-2. Latency: P95 latency for message delivery
-3. Developer Experience: SDK quality, TypeScript support, docs
-4. Scalability: Connection limits, message throughput
-5. Auth Integration: Works with Better Auth session tokens
-6. PostgreSQL Integration: Native support for database changes
-
-Recommendation: Supabase Realtime
-- Free tier: 200 concurrent connections
-- Native PostgreSQL integration (listen to DB changes)
-- Works with existing Better Auth (Supabase Auth compatible)
-- Excellent TypeScript SDK
-```
+**Decision Made**: Socket.io
+**Rationale**:
+1. Self-hosted - no external service dependencies
+2. Full control over real-time infrastructure
+3. Works seamlessly with Next.js API routes
+4. No additional costs
+5. Proven reliability and extensive community support
+6. Better integration with existing Better Auth session management
 
 ---
 
-### 0.1.2: Install Real-Time Provider Dependencies
+### 0.1.2: Install Socket.io Dependencies & Configuration
 **Status**: 🔴 Not Started
 **Priority**: P0 (Critical)
-**Estimated Time**: 2 hours
+**Estimated Time**: 3 hours
 **Dependencies**: 0.1.1
 
 **Acceptance Criteria**:
-- [ ] Dependencies installed: `@supabase/supabase-js` or `socket.io`
-- [ ] Environment variables configured in `.env.local` and `.env.example`
-- [ ] Connection utility created at `src/lib/realtime/client.ts`
+- [ ] Dependencies installed: `socket.io` and `socket.io-client`
+- [ ] Socket.io server created in custom Next.js server or API route
+- [ ] Environment variables configured for feature flag
+- [ ] Connection utility created at `src/lib/realtime/socket-client.ts`
 - [ ] Reconnection logic handles network failures
 - [ ] Type definitions exported for real-time events
+- [ ] Better Auth session middleware for Socket.io connections
 
 **Implementation Notes**:
 ```bash
-# For Supabase
-npm install @supabase/supabase-js
-
-# Environment variables
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx
+npm install socket.io socket.io-client
 ```
 
-File: `src/lib/realtime/client.ts`
-```ts
-import { createClient } from '@supabase/supabase-js';
+**Environment variables** (`.env.example`):
+```bash
+# Feature Flags
+NEXT_PUBLIC_FEATURE_REALTIME=false
+NEXT_PUBLIC_FEATURE_AI_COACH=false
+NEXT_PUBLIC_FEATURE_BLITZ_QUIZ=false
+NEXT_PUBLIC_FEATURE_AI_GENERATION=false
 
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+# Socket.io Configuration
+SOCKET_IO_PATH=/api/socketio
+```
+
+File: `src/lib/realtime/socket-client.ts`
+```ts
+import { io, Socket } from 'socket.io-client';
 
 export type RealtimeEvent =
   | { type: 'presence_update'; payload: { userId: string; status: string } }
-  | { type: 'session_started'; payload: { sessionId: string } };
+  | { type: 'session_started'; payload: { sessionId: string } }
+  | { type: 'session:card_revealed'; payload: { sessionId: number; cardIndex: number } };
+
+let socket: Socket | null = null;
+
+export function initSocket(sessionToken: string): Socket {
+  if (!socket) {
+    socket = io({
+      path: process.env.NEXT_PUBLIC_SOCKET_IO_PATH || '/api/socketio',
+      auth: { token: sessionToken },
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+    });
+  }
+  return socket;
+}
+
+export function getSocket(): Socket | null {
+  return socket;
+}
+
+export function disconnectSocket(): void {
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+}
 ```
 
 ---
@@ -203,48 +227,122 @@ export class KnowledgeGap {
 
 ---
 
-### 0.2.2: Integrate Anthropic Claude Client
+### 0.2.2: Create AI Wrapper SDK with Model Selection
 **Status**: 🔴 Not Started
 **Priority**: P1 (High)
-**Estimated Time**: 6 hours
+**Estimated Time**: 10 hours
 **Dependencies**: 0.2.1
 
 **Acceptance Criteria**:
-- [ ] Client utility created at `src/lib/ai/anthropic-client.ts`
+- [ ] AI SDK wrapper created at `src/lib/ai/ai-sdk.ts`
+- [ ] Model selection logic based on task complexity
 - [ ] Retry logic with exponential backoff implemented
 - [ ] Rate limiting with queue (max 50 requests/min)
 - [ ] Error handling for 429, 500, timeout
-- [ ] Usage tracking (token count, cost estimation)
+- [ ] Usage tracking (token count, cost estimation per user)
+- [ ] Response caching layer implemented
+- [ ] Per-user usage limits enforced
+- [ ] Feature flag integration
 - [ ] Environment variable `ANTHROPIC_API_KEY` configured
 
-**Implementation**:
+**Implementation Strategy**:
 ```ts
-// src/lib/ai/anthropic-client.ts
+// src/lib/ai/ai-sdk.ts
 import Anthropic from '@anthropic-ai/sdk';
-import { retry } from '@/lib/shared/retry';
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
+export enum AIModelTier {
+  FAST = 'fast',        // Haiku - Simple tasks, low cost
+  BALANCED = 'balanced', // Sonnet - Most tasks, good balance
+  POWERFUL = 'powerful'  // Opus - Complex analysis only
+}
 
-export async function generateAIResponse(prompt: string): Promise<string> {
-  return retry(
-    async () => {
-      const message = await client.messages.create({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 2048,
-        messages: [{ role: 'user', content: prompt }],
-      });
+export interface AIRequestOptions {
+  modelTier?: AIModelTier;
+  maxTokens?: number;
+  temperature?: number;
+  userId: string;
+  cacheKey?: string;
+  bypassCache?: boolean;
+}
 
-      const textBlock = message.content.find(block => block.type === 'text');
-      if (!textBlock || textBlock.type !== 'text') {
-        throw new Error('No text response from Claude');
-      }
+const MODEL_CONFIG = {
+  [AIModelTier.FAST]: {
+    model: 'claude-3-5-haiku-20241022',
+    maxTokens: 1024,
+    costPer1kTokens: 0.001, // Example pricing
+  },
+  [AIModelTier.BALANCED]: {
+    model: 'claude-sonnet-4-5-20250929',
+    maxTokens: 2048,
+    costPer1kTokens: 0.003,
+  },
+  [AIModelTier.POWERFUL]: {
+    model: 'claude-opus-4-5-20251101',
+    maxTokens: 4096,
+    costPer1kTokens: 0.015,
+  },
+};
 
-      return textBlock.text;
-    },
-    { maxAttempts: 3, delayMs: 1000, backoffFactor: 2 }
-  );
+// Model selection based on task type
+export function selectModelForTask(taskType: string): AIModelTier {
+  switch (taskType) {
+    case 'socratic_hint':
+    case 'simple_flashcard':
+      return AIModelTier.FAST;
+
+    case 'flashcard_generation':
+    case 'gap_analysis':
+      return AIModelTier.BALANCED;
+
+    case 'bridge_deck':
+    case 'knowledge_map':
+      return AIModelTier.POWERFUL;
+
+    default:
+      return AIModelTier.BALANCED;
+  }
+}
+
+export class AIService {
+  private client: Anthropic;
+
+  async generate(prompt: string, options: AIRequestOptions): Promise<string> {
+    // 1. Check feature flag
+    if (!process.env.NEXT_PUBLIC_FEATURE_AI_COACH) {
+      throw new Error('AI features are disabled');
+    }
+
+    // 2. Check user usage limits
+    await this.checkUsageLimits(options.userId);
+
+    // 3. Check cache
+    if (options.cacheKey && !options.bypassCache) {
+      const cached = await this.getFromCache(options.cacheKey);
+      if (cached) return cached;
+    }
+
+    // 4. Select model and generate
+    const config = MODEL_CONFIG[options.modelTier || AIModelTier.BALANCED];
+    const response = await this.callAPI(prompt, config);
+
+    // 5. Track usage
+    await this.trackUsage(options.userId, response.usage);
+
+    // 6. Cache response
+    if (options.cacheKey) {
+      await this.saveToCache(options.cacheKey, response.text);
+    }
+
+    return response.text;
+  }
+
+  private async checkUsageLimits(userId: string): Promise<void> {
+    // Check daily/monthly limits per user
+  }
+
+  private async trackUsage(userId: string, usage: any): Promise<void> {
+    // Track tokens and cost
+  }
 }
 ```
 
@@ -332,21 +430,23 @@ Provide your Socratic hint:
 
 ---
 
-### 0.2.4: Create AI Database Schema
+### 0.2.4: Create AI Database Schema with Usage Tracking
 **Status**: 🔴 Not Started
 **Priority**: P1 (High)
-**Estimated Time**: 4 hours
+**Estimated Time**: 6 hours
 **Dependencies**: 0.2.1
 
 **Acceptance Criteria**:
 - [ ] Schema file: `src/infrastructure/database/schema/ai.schema.ts`
 - [ ] Tables created:
   - `ai_generated_content`
-  - `ai_hints` (cache)
+  - `ai_response_cache` (aggressive caching)
+  - `ai_usage_tracking` (per-user limits)
+  - `ai_hints` (hint cache)
   - `knowledge_gaps`
 - [ ] Migration generated and applied
 - [ ] Zod schemas exported
-- [ ] Indexes on foreign keys
+- [ ] Indexes on foreign keys and cache lookup fields
 
 **Implementation**:
 ```ts
@@ -354,13 +454,15 @@ Provide your Socratic hint:
 export const aiGeneratedContent = pgTable('ai_generated_content', {
   id: serial('id').primaryKey(),
   sourceType: varchar('source_type', { enum: ['pdf', 'url', 'text', 'audio'] }).notNull(),
-  sourceUrl: text('source_url'), // S3 key or original URL
-  extractedText: text('extracted_text'), // Full text extraction
+  sourceUrl: text('source_url'),
+  extractedText: text('extracted_text'),
   generatedCards: jsonb('generated_cards').$type<FlashcardDraft[]>(),
   status: varchar('status', { enum: ['pending', 'processing', 'completed', 'failed'] }).notNull().default('pending'),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  errorMessage: text('error_message'),
+  modelUsed: varchar('model_used', { length: 100 }),
   tokensUsed: integer('tokens_used'),
+  estimatedCost: decimal('estimated_cost', { precision: 10, scale: 6 }),
+  errorMessage: text('error_message'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   completedAt: timestamp('completed_at'),
 }, (table) => ({
@@ -368,14 +470,53 @@ export const aiGeneratedContent = pgTable('ai_generated_content', {
   statusIdx: index('ai_content_status_idx').on(table.status),
 }));
 
+// Cache AI responses to reduce costs
+export const aiResponseCache = pgTable('ai_response_cache', {
+  id: serial('id').primaryKey(),
+  cacheKey: varchar('cache_key', { length: 255 }).notNull().unique(),
+  prompt: text('prompt').notNull(),
+  response: text('response').notNull(),
+  modelUsed: varchar('model_used', { length: 100 }).notNull(),
+  tokensUsed: integer('tokens_used').notNull(),
+  hitCount: integer('hit_count').notNull().default(0),
+  lastAccessedAt: timestamp('last_accessed_at').notNull().defaultNow(),
+  expiresAt: timestamp('expires_at').notNull(), // Cache TTL
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+  cacheKeyIdx: index('ai_cache_key_idx').on(table.cacheKey),
+  expiresAtIdx: index('ai_cache_expires_idx').on(table.expiresAt),
+}));
+
+// Track per-user AI usage for limits
+export const aiUsageTracking = pgTable('ai_usage_tracking', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  requestType: varchar('request_type', {
+    length: 50,
+    enum: ['socratic_hint', 'flashcard_generation', 'gap_analysis', 'bridge_deck']
+  }).notNull(),
+  modelUsed: varchar('model_used', { length: 100 }).notNull(),
+  tokensUsed: integer('tokens_used').notNull(),
+  estimatedCost: decimal('estimated_cost', { precision: 10, scale: 6 }).notNull(),
+  wasFromCache: boolean('was_from_cache').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index('ai_usage_user_idx').on(table.userId),
+  createdAtIdx: index('ai_usage_created_idx').on(table.createdAt),
+  userDateIdx: index('ai_usage_user_date_idx').on(table.userId, table.createdAt),
+}));
+
+// Hint cache (specific to flashcards)
 export const aiHints = pgTable('ai_hints', {
   id: serial('id').primaryKey(),
   flashcardId: integer('flashcard_id').notNull().references(() => flashcards.id, { onDelete: 'cascade' }),
   hint: text('hint').notNull(),
-  expiresAt: timestamp('expires_at').notNull(), // Cache for 24h
+  modelUsed: varchar('model_used', { length: 100 }).notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (table) => ({
   flashcardIdx: index('ai_hints_flashcard_idx').on(table.flashcardId),
+  expiresAtIdx: index('ai_hints_expires_idx').on(table.expiresAt),
 }));
 
 export const knowledgeGaps = pgTable('knowledge_gaps', {
@@ -383,7 +524,7 @@ export const knowledgeGaps = pgTable('knowledge_gaps', {
   groupId: integer('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
   topic: varchar('topic', { length: 255 }).notNull(),
   categoryId: integer('category_id').references(() => categories.id, { onDelete: 'set null' }),
-  successRate: integer('success_rate').notNull(), // 0-100
+  successRate: integer('success_rate').notNull(),
   affectedUserCount: integer('affected_user_count').notNull(),
   prerequisiteConcepts: jsonb('prerequisite_concepts').$type<string[]>(),
   bridgeDeckGenerated: boolean('bridge_deck_generated').notNull().default(false),

@@ -5,6 +5,8 @@ export * from "./enums";
 export * from "./gamification.schema";
 export * from "./groups.schema";
 export * from "./learning-path.schema";
+export * from "./realtime.schema";
+export * from "./ai.schema";
 
 import { groupMemberAnalytics, userActivityLog } from "./analytics.schema";
 import { accounts, sessions, users, verification } from "./auth.schema";
@@ -40,6 +42,22 @@ import {
   units,
 } from "./learning-path.schema";
 
+import {
+  onlinePresence,
+  liveSessions,
+  liveSessionParticipants,
+  liveSessionAnswers,
+} from "./realtime.schema";
+
+import {
+  aiGeneratedContent,
+  aiResponseCache,
+  aiUsageTracking,
+  aiHints,
+  knowledgeGaps,
+  aiUsageQuotas,
+} from "./ai.schema";
+
 export const schema = {
   users,
   accounts,
@@ -73,4 +91,18 @@ export const schema = {
 
   userActivityLog,
   groupMemberAnalytics,
+
+  // Real-time features
+  onlinePresence,
+  liveSessions,
+  liveSessionParticipants,
+  liveSessionAnswers,
+
+  // AI features
+  aiGeneratedContent,
+  aiResponseCache,
+  aiUsageTracking,
+  aiHints,
+  knowledgeGaps,
+  aiUsageQuotas,
 };

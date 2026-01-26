@@ -33,7 +33,11 @@
       "Bash(grep:*)",
       "Bash(npm run lint)",
       "Bash(npm run lint:fix:*)",
-      "Bash(npx biome:*)"
+      "Bash(npx biome:*)",
+      "Bash(npm run seed:db:*)",
+      "Bash(npm run reset:db:*)",
+      "Bash(npm run seed:realtime:*)",
+      "Bash(tsx tools/test-ai-sdk.ts:*)"
     ]
   }
 }

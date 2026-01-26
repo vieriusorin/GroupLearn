@@ -92,9 +92,9 @@ export const groupPaths = pgTable("group_paths", {
   pathId: integer("path_id")
     .notNull()
     .references(() => paths.id, { onDelete: "cascade" }),
-  assignedBy: text("assigned_by")
-    .notNull()
-    .references(() => users.id, { onDelete: "set null" }),
+  assignedBy: text("assigned_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
   assignedAt: timestamp("assigned_at").notNull().defaultNow(),
 });
 

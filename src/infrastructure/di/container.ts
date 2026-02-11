@@ -32,6 +32,8 @@ import { RemoveFromStrugglingQueueHandler } from "@/commands/handlers/review/Rem
 import { StartReviewSessionHandler } from "@/commands/handlers/review/StartReviewSessionHandler";
 import { SubmitReviewHandler } from "@/commands/handlers/review/SubmitReviewHandler";
 import { getDb } from "@/infrastructure/database/db";
+import { DatabaseAIGeneratedContentRepository } from "@/infrastructure/repositories/ai/DatabaseAIGeneratedContentRepository";
+import { DatabaseKnowledgeGapRepository } from "@/infrastructure/repositories/ai/DatabaseKnowledgeGapRepository";
 import { DatabaseCategoryRepository } from "@/infrastructure/repositories/content/DatabaseCategoryRepository";
 import { DatabaseDomainRepository } from "@/infrastructure/repositories/content/DatabaseDomainRepository";
 import { DatabaseFlashcardRepository } from "@/infrastructure/repositories/content/DatabaseFlashcardRepository";
@@ -102,6 +104,8 @@ class Container {
     session: new InMemorySessionRepository(),
     userProgress: new DatabaseUserProgressRepository(this.db),
     reviewHistory: new DatabaseReviewHistoryRepository(this.db),
+    aiGeneratedContent: new DatabaseAIGeneratedContentRepository(),
+    knowledgeGap: new DatabaseKnowledgeGapRepository(),
   };
 
   // Command handlers
@@ -139,7 +143,10 @@ class Container {
         this.repositories.session,
         this.repositories.userProgress,
       ),
-      submitAnswer: new SubmitAnswerHandler(this.repositories.session),
+      submitAnswer: new SubmitAnswerHandler(
+        this.repositories.session,
+        this.repositories.lesson,
+      ),
       completeLesson: new CompleteLessonHandler(
         this.repositories.session,
         this.repositories.lessonCompletion,

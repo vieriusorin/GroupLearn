@@ -14,10 +14,11 @@ import {
   liveSessionParticipants,
   liveSessionAnswers,
   flashcards,
+  users,
 } from "@/infrastructure/database/schema";
 import { DomainError } from "@/domains/shared/errors";
 import { eq, and, desc } from "drizzle-orm";
-import { getSocket } from "@/lib/realtime/socket-client";
+import { emitAnswerSubmitted, emitLeaderboardUpdated } from "@/lib/realtime/socket-server";
 
 export class SubmitLiveAnswerHandler
   implements ICommandHandler<SubmitLiveAnswerCommand, SubmitLiveAnswerResult>
@@ -148,17 +149,47 @@ export class SubmitLiveAnswerHandler
           )
         );
 
-      // 10. Broadcast answer submitted event via Socket.io
+      // 10. Broadcast answer submitted and leaderboard updated events via Socket.io
       try {
-        const socket = getSocket();
-        if (socket) {
-          socket.to(`session:${command.sessionId}`).emit("session:answer_submitted", {
-            sessionId: command.sessionId,
-            userId: command.userId,
-            isCorrect,
-            points,
-          });
-        }
+        // Emit answer submitted event
+        emitAnswerSubmitted(
+          command.sessionId,
+          command.userId,
+          command.flashcardId,
+          isCorrect,
+          points,
+          command.responseTimeMs
+        );
+
+        // Fetch full leaderboard with user details for emission
+        const leaderboardData = await db
+          .select({
+            userId: liveSessionParticipants.userId,
+            userName: users.name,
+            userAvatar: users.image,
+            totalScore: liveSessionParticipants.totalScore,
+            rank: liveSessionParticipants.rank,
+            correctAnswers: liveSessionParticipants.correctAnswers,
+            averageResponseTime: liveSessionParticipants.averageResponseTime,
+          })
+          .from(liveSessionParticipants)
+          .leftJoin(users, eq(liveSessionParticipants.userId, users.id))
+          .where(eq(liveSessionParticipants.sessionId, command.sessionId))
+          .orderBy(desc(liveSessionParticipants.totalScore));
+
+        // Emit leaderboard updated event
+        emitLeaderboardUpdated(
+          command.sessionId,
+          leaderboardData.map((p) => ({
+            userId: p.userId,
+            userName: p.userName || "Anonymous",
+            userAvatar: p.userAvatar,
+            totalScore: p.totalScore || 0,
+            rank: p.rank || 0,
+            correctAnswers: p.correctAnswers || 0,
+            averageResponseTime: p.averageResponseTime || 0,
+          }))
+        );
       } catch (socketError) {
         console.error("Failed to broadcast answer submission:", socketError);
       }

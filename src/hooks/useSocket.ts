@@ -22,7 +22,7 @@ import { FeatureFlags } from '@/lib/shared/feature-flags';
  * Automatically connects/disconnects based on authentication status
  */
 export function useSocket() {
-  const { data: session } = useSession();
+  const { user } = useSession();
   const [socket, setSocket] = useState<TypedSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -31,7 +31,7 @@ export function useSocket() {
       return;
     }
 
-    if (!session?.user) {
+    if (!user) {
       // Disconnect if user logs out
       if (socket) {
         disconnectSocket();
@@ -42,7 +42,7 @@ export function useSocket() {
     }
 
     // Initialize socket with session token
-    const sessionToken = session.user.id; // Or use actual session token
+    const sessionToken = user.id; // Or use actual session token
     const socketInstance = initSocket(sessionToken);
     setSocket(socketInstance);
 
@@ -60,7 +60,7 @@ export function useSocket() {
       socketInstance.off('connect', handleConnect);
       socketInstance.off('disconnect', handleDisconnect);
     };
-  }, [session?.user]);
+  }, [user]);
 
   return {
     socket,

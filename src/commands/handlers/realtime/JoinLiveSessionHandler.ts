@@ -9,7 +9,7 @@ import type { JoinLiveSessionCommand } from "@/commands/realtime/JoinLiveSession
 import type { ICommandHandler } from "@/commands/types";
 import type { JoinLiveSessionResult } from "@/application/dtos/realtime.dto";
 import { db } from "@/infrastructure/database/db";
-import { liveSessions, liveSessionParticipants, groupMembers } from "@/infrastructure/database/schema";
+import { liveSessions, liveSessionParticipants, groupMembers, groups, users } from "@/infrastructure/database/schema";
 import { DomainError } from "@/domains/shared/errors";
 import { eq, and } from "drizzle-orm";
 import { getSocket } from "@/lib/realtime/socket-client";
@@ -20,14 +20,11 @@ export class JoinLiveSessionHandler
   async execute(command: JoinLiveSessionCommand): Promise<JoinLiveSessionResult> {
     try {
       // 1. Get session and verify it exists
-      const session = await db.query.liveSessions.findFirst({
-        where: eq(liveSessions.id, command.sessionId),
-        with: {
-          group: {
-            columns: { id: true, name: true },
-          },
-        },
-      });
+      const [session] = await db
+        .select()
+        .from(liveSessions)
+        .where(eq(liveSessions.id, command.sessionId))
+        .limit(1);
 
       if (!session) {
         throw new DomainError("Live session not found", "SESSION_NOT_FOUND");
@@ -41,15 +38,27 @@ export class JoinLiveSessionHandler
         );
       }
 
-      // 3. Verify user is a member of the group
-      const membership = await db.query.groupMembers.findFirst({
-        where: and(
-          eq(groupMembers.groupId, session.groupId),
-          eq(groupMembers.userId, command.userId)
-        ),
-      });
+      // 3. Verify user is a member of the group OR the group admin
+      const [membership] = await db
+        .select({ id: groupMembers.id })
+        .from(groupMembers)
+        .where(
+          and(
+            eq(groupMembers.groupId, session.groupId),
+            eq(groupMembers.userId, command.userId)
+          )
+        )
+        .limit(1);
 
-      if (!membership) {
+      const [group] = await db
+        .select({ adminId: groups.adminId })
+        .from(groups)
+        .where(eq(groups.id, session.groupId))
+        .limit(1);
+
+      const isGroupAdmin = group?.adminId === command.userId;
+
+      if (!membership && !isGroupAdmin) {
         throw new DomainError(
           "You must be a member of this group to join this session",
           "UNAUTHORIZED"
@@ -57,12 +66,16 @@ export class JoinLiveSessionHandler
       }
 
       // 4. Check if user is already a participant
-      const existingParticipant = await db.query.liveSessionParticipants.findFirst({
-        where: and(
-          eq(liveSessionParticipants.sessionId, command.sessionId),
-          eq(liveSessionParticipants.userId, command.userId)
-        ),
-      });
+      const [existingParticipant] = await db
+        .select()
+        .from(liveSessionParticipants)
+        .where(
+          and(
+            eq(liveSessionParticipants.sessionId, command.sessionId),
+            eq(liveSessionParticipants.userId, command.userId)
+          )
+        )
+        .limit(1);
 
       if (existingParticipant) {
         // User already joined - return success with existing data
@@ -88,10 +101,11 @@ export class JoinLiveSessionHandler
         .returning();
 
       // 6. Get user info for broadcast
-      const user = await db.query.users.findFirst({
-        where: eq(db.schema.users.id, command.userId),
-        columns: { id: true, name: true, image: true },
-      });
+      const [user] = await db
+        .select({ id: users.id, name: users.name, image: users.image })
+        .from(users)
+        .where(eq(users.id, command.userId))
+        .limit(1);
 
       // 7. Broadcast participant joined event via Socket.io
       try {

@@ -8,14 +8,19 @@ import {
   LessonCompletedEvent,
   LessonFailedEvent,
 } from "@/domains/learning-path/events";
+import type { ILessonRepository } from "@/domains/learning-path/repositories/ILessonRepository";
 import type { ISessionRepository } from "@/domains/learning-path/repositories/ISessionRepository";
 import { DomainError } from "@/domains/shared/errors";
 import { LessonId, UserId } from "@/domains/shared/types/branded-types";
+import { calculateLessonXP } from "@/lib/gamification/gamification";
 
 export class SubmitAnswerHandler
   implements ICommandHandler<SubmitAnswerCommand, SubmitAnswerResult>
 {
-  constructor(private readonly sessionRepository: ISessionRepository) {}
+  constructor(
+    private readonly sessionRepository: ISessionRepository,
+    private readonly lessonRepository: ILessonRepository,
+  ) {}
 
   async execute(command: SubmitAnswerCommand): Promise<SubmitAnswerResult> {
     const userId = UserId(command.userId);
@@ -65,12 +70,22 @@ export class SubmitAnswerHandler
     session: LessonSession,
     _event: LessonCompletedEvent,
   ): Promise<SubmitAnswerResult> {
-    const xpEarned = 10; // Placeholder
+    // Get the lesson to retrieve its base XP reward
+    const lesson = await this.lessonRepository.findById(session.lessonId);
+    if (!lesson) {
+      throw new DomainError("Lesson not found", "LESSON_NOT_FOUND");
+    }
+
+    // Calculate XP using the gamification service
+    const accuracyPercent = session.getAccuracy().getPercent();
+    const lessonBaseXP = lesson.xpReward;
+    const { totalXP } = calculateLessonXP(lessonBaseXP, accuracyPercent);
+
     const progress = session.getProgress();
 
     return {
       result: "completed",
-      accuracy: session.getAccuracy().getPercent(),
+      accuracy: accuracyPercent,
       heartsRemaining: session.getHearts().remaining(),
       progress: {
         current: progress.getCompleted(),
@@ -78,8 +93,8 @@ export class SubmitAnswerHandler
         percent: progress.getPercentage(),
       },
       lessonResult: {
-        accuracy: session.getAccuracy().getPercent(),
-        xpEarned,
+        accuracy: accuracyPercent,
+        xpEarned: totalXP,
         isPerfect: session.isPerfect(),
         cardsReviewed: session.getAnswers().length,
       },

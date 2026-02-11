@@ -18,7 +18,7 @@ import {
 } from "@/infrastructure/database/schema";
 import { DomainError } from "@/domains/shared/errors";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { getSocket } from "@/lib/realtime/socket-client";
+import { emitSessionEnded } from "@/lib/realtime/socket-server";
 
 export class EndLiveSessionHandler
   implements ICommandHandler<EndLiveSessionCommand, EndLiveSessionResult>
@@ -26,9 +26,11 @@ export class EndLiveSessionHandler
   async execute(command: EndLiveSessionCommand): Promise<EndLiveSessionResult> {
     try {
       // 1. Get session and verify it exists
-      const session = await db.query.liveSessions.findFirst({
-        where: eq(liveSessions.id, command.sessionId),
-      });
+      const [session] = await db
+        .select()
+        .from(liveSessions)
+        .where(eq(liveSessions.id, command.sessionId))
+        .limit(1);
 
       if (!session) {
         throw new DomainError("Live session not found", "SESSION_NOT_FOUND");
@@ -156,14 +158,19 @@ export class EndLiveSessionHandler
 
       // 10. Broadcast session ended event via Socket.io
       try {
-        const socket = getSocket();
-        if (socket) {
-          socket.to(`session:${command.sessionId}`).emit("session:ended", {
-            sessionId: command.sessionId,
-            finalLeaderboard,
-            xpAwarded: xpAwards,
-          });
-        }
+        emitSessionEnded(
+          command.sessionId,
+          updatedSession.endedAt!.toISOString(),
+          finalLeaderboard.map((entry) => ({
+            userId: entry.userId,
+            userName: entry.userName,
+            userAvatar: entry.userImage,
+            totalScore: entry.totalScore,
+            rank: entry.rank,
+            correctAnswers: entry.correctAnswers,
+            averageResponseTime: entry.averageResponseTime,
+          }))
+        );
       } catch (socketError) {
         console.error("Failed to broadcast session end:", socketError);
       }

@@ -3,6 +3,8 @@ import { AdminGroupDetailClient } from "@/components/admin/AdminGroupDetailClien
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { getGroupDetail } from "@/presentation/actions/groups";
+import { getDomains, getCategories } from "@/presentation/actions/content";
+import { FeatureFlags } from "@/lib/shared/feature-flags";
 
 export default async function AdminGroupDetailPage({
   params,
@@ -31,11 +33,28 @@ export default async function AdminGroupDetailPage({
     );
   }
 
+  // Fetch categories for live sessions (if feature is enabled)
+  let categories: Array<{ id: number; name: string }> = [];
+  if (FeatureFlags.LIVE_SESSIONS) {
+    const domainsResult = await getDomains();
+    if (domainsResult.success && domainsResult.data.domains.length > 0) {
+      const firstDomain = domainsResult.data.domains[0];
+      const categoriesResult = await getCategories(firstDomain.id);
+      if (categoriesResult.success) {
+        categories = categoriesResult.data.map((cat) => ({
+          id: cat.id,
+          name: cat.name,
+        }));
+      }
+    }
+  }
+
   return (
     <AdminGroupDetailClient
       group={result.data.group}
       members={result.data.members}
       invitations={result.data.invitations}
+      categories={categories}
     />
   );
 }

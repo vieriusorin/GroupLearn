@@ -13,7 +13,7 @@ import type { GetLiveSessionDetailQuery } from "@/queries/realtime/GetLiveSessio
 import type { IQueryHandler } from "@/commands/types";
 import type { GetLiveSessionDetailResult, LiveSessionDetail } from "@/application/dtos/realtime.dto";
 import { db } from "@/infrastructure/database/db";
-import { liveSessions, liveSessionParticipants, flashcards, groupMembers } from "@/infrastructure/database/schema";
+import { liveSessions, liveSessionParticipants, flashcards, groupMembers, groups } from "@/infrastructure/database/schema";
 import { DomainError } from "@/domains/shared/errors";
 import { eq, and, inArray } from "drizzle-orm";
 
@@ -42,15 +42,27 @@ export class GetLiveSessionDetailHandler
 
       const { session, hostName, hostImage, categoryName } = sessionData[0];
 
-      // 2. Verify user has access (must be a member of the group)
-      const membership = await db.query.groupMembers.findFirst({
-        where: and(
-          eq(groupMembers.groupId, session.groupId),
-          eq(groupMembers.userId, query.userId)
-        ),
-      });
+      // 2. Verify user has access (must be a member of the group OR the group admin)
+      const [membership] = await db
+        .select({ id: groupMembers.id })
+        .from(groupMembers)
+        .where(
+          and(
+            eq(groupMembers.groupId, session.groupId),
+            eq(groupMembers.userId, query.userId)
+          )
+        )
+        .limit(1);
 
-      if (!membership) {
+      const [group] = await db
+        .select({ adminId: groups.adminId })
+        .from(groups)
+        .where(eq(groups.id, session.groupId))
+        .limit(1);
+
+      const isGroupAdmin = group?.adminId === query.userId;
+
+      if (!membership && !isGroupAdmin) {
         throw new DomainError(
           "You must be a member of this group to view this session",
           "UNAUTHORIZED"

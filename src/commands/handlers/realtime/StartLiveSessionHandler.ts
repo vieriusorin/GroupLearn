@@ -12,7 +12,7 @@ import { db } from "@/infrastructure/database/db";
 import { liveSessions, flashcards } from "@/infrastructure/database/schema";
 import { DomainError } from "@/domains/shared/errors";
 import { eq, and, inArray, sql } from "drizzle-orm";
-import { getSocket } from "@/lib/realtime/socket-client";
+import { emitSessionStarted, emitCardRevealed } from "@/lib/realtime/socket-server";
 
 export class StartLiveSessionHandler
   implements ICommandHandler<StartLiveSessionCommand, StartLiveSessionResult>
@@ -116,22 +116,31 @@ export class StartLiveSessionHandler
 
       // 7. Broadcast session started event via Socket.io
       try {
-        const socket = getSocket();
-        if (socket) {
-          const config = session.config as { timeLimit: number };
+        const config = session.config as { cardCount: number; timeLimit: number; allowHints: boolean };
 
-          socket.to(`session:${command.sessionId}`).emit("session:started", {
-            sessionId: command.sessionId,
-            startedAt: updatedSession.startedAt!.toISOString(),
-          });
-
-          // Also broadcast first card
-          socket.to(`session:${command.sessionId}`).emit("session:card_revealed", {
-            sessionId: command.sessionId,
-            cardIndex: 0,
-            flashcard: firstCard,
+        emitSessionStarted(
+          command.sessionId,
+          updatedSession.startedAt!.toISOString(),
+          {
+            cardCount: config.cardCount,
             timeLimit: config.timeLimit,
-          });
+            allowHints: config.allowHints,
+          }
+        );
+
+        // Also broadcast first card
+        if (firstCard) {
+          emitCardRevealed(
+            command.sessionId,
+            0,
+            {
+              id: firstCard.id,
+              question: firstCard.question,
+              answer: firstCard.answer,
+              options: firstCard.options as string[] | undefined,
+            },
+            config.timeLimit
+          );
         }
       } catch (socketError) {
         console.error("Failed to broadcast session start:", socketError);

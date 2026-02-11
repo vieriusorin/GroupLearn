@@ -7,7 +7,9 @@ import { GroupDetailHeader } from "@/components/admin/GroupDetailHeader";
 import { InvitationsSection } from "@/components/admin/InvitationsSection";
 import { InviteModal } from "@/components/admin/InviteModal";
 import { MembersSection } from "@/components/admin/MembersSection";
+import { LiveSessionsAdminSection } from "@/components/admin/LiveSessionsAdminSection";
 import { Dialog } from "@/components/ui/dialog";
+import { FeatureFlags } from "@/lib/shared/feature-flags";
 import {
   type Group,
   type Invitation,
@@ -22,12 +24,14 @@ interface Props {
   group: Group;
   members: Member[];
   invitations: Invitation[];
+  categories?: Array<{ id: number; name: string }>;
 }
 
-export function AdminGroupDetailClient({ group, members, invitations }: Props) {
+export function AdminGroupDetailClient({ group, members, invitations, categories = [] }: Props) {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [activeSessionCount, setActiveSessionCount] = useState(0);
   const router = useRouter();
 
   const handleRemoveMember = useCallback(
@@ -100,7 +104,17 @@ export function AdminGroupDetailClient({ group, members, invitations }: Props) {
         group={group}
         groupId={group.id}
         onInviteClick={() => setShowInviteModal(true)}
+        activeSessionCount={activeSessionCount}
       />
+
+      {/* Live Sessions Section - Prominent placement */}
+      {FeatureFlags.LIVE_SESSIONS && (
+        <LiveSessionsAdminSection
+          groupId={group.id}
+          categories={categories}
+          onSessionCountChange={setActiveSessionCount}
+        />
+      )}
 
       <MembersSection
         members={members}

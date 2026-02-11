@@ -37,7 +37,9 @@
       "Bash(npm run seed:db:*)",
       "Bash(npm run reset:db:*)",
       "Bash(npm run seed:realtime:*)",
-      "Bash(tsx tools/test-ai-sdk.ts:*)"
+      "Bash(tsx tools/test-ai-sdk.ts:*)",
+      "Bash(wc:*)",
+      "Bash(npm run type-check:*)"
     ]
   }
 }

@@ -9,25 +9,36 @@ import type { CreateLiveSessionCommand } from "@/commands/realtime/CreateLiveSes
 import type { ICommandHandler } from "@/commands/types";
 import type { CreateLiveSessionResult } from "@/application/dtos/realtime.dto";
 import { db } from "@/infrastructure/database/db";
-import { liveSessions, liveSessionParticipants, groupMembers } from "@/infrastructure/database/schema";
+import { liveSessions, liveSessionParticipants, groupMembers, groups, categories } from "@/infrastructure/database/schema";
 import { DomainError } from "@/domains/shared/errors";
 import { eq, and } from "drizzle-orm";
-import { getSocket } from "@/lib/realtime/socket-client";
 
 export class CreateLiveSessionHandler
   implements ICommandHandler<CreateLiveSessionCommand, CreateLiveSessionResult>
 {
   async execute(command: CreateLiveSessionCommand): Promise<CreateLiveSessionResult> {
     try {
-      // 1. Validate user is a member of the group
-      const membership = await db.query.groupMembers.findFirst({
-        where: and(
-          eq(groupMembers.groupId, command.groupId),
-          eq(groupMembers.userId, command.userId)
-        ),
-      });
+      // 1. Validate user is a member of the group OR the group admin
+      const [membership] = await db
+        .select({ id: groupMembers.id })
+        .from(groupMembers)
+        .where(
+          and(
+            eq(groupMembers.groupId, command.groupId),
+            eq(groupMembers.userId, command.userId)
+          )
+        )
+        .limit(1);
 
-      if (!membership) {
+      const [group] = await db
+        .select({ adminId: groups.adminId })
+        .from(groups)
+        .where(eq(groups.id, command.groupId))
+        .limit(1);
+
+      const isGroupAdmin = group?.adminId === command.userId;
+
+      if (!membership && !isGroupAdmin) {
         throw new DomainError(
           "You must be a member of this group to create sessions",
           "UNAUTHORIZED"
@@ -51,9 +62,11 @@ export class CreateLiveSessionHandler
 
       // 3. If category specified, validate it exists
       if (command.categoryId) {
-        const category = await db.query.categories.findFirst({
-          where: eq(db.schema.categories.id, command.categoryId),
-        });
+        const [category] = await db
+          .select({ id: categories.id })
+          .from(categories)
+          .where(eq(categories.id, command.categoryId))
+          .limit(1);
 
         if (!category) {
           throw new DomainError("Category not found", "CATEGORY_NOT_FOUND");
@@ -83,21 +96,9 @@ export class CreateLiveSessionHandler
         rank: null,
       });
 
-      // 6. Broadcast session creation to group via Socket.io
-      try {
-        const socket = getSocket();
-        if (socket) {
-          socket.to(`group:${command.groupId}`).emit("session:created", {
-            sessionId: session.id,
-            groupId: command.groupId,
-            sessionType: command.sessionType,
-            hostId: command.userId,
-          });
-        }
-      } catch (socketError) {
-        // Non-critical: log but don't fail the command
-        console.error("Failed to broadcast session creation:", socketError);
-      }
+      // 6. Socket.io broadcasts are handled server-side when socket server is running
+      // The client will poll for updates or receive them via socket connection
+      // console.log(`Session ${session.id} created, clients will see it on next refresh`)
 
       return {
         success: true,

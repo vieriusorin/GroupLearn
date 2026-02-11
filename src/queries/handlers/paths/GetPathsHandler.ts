@@ -175,6 +175,34 @@ async function getVisiblePathsWithProgress(
         completedLessons = Number(completed.count) || 0;
       }
 
+      // Calculate completed units (units where all lessons are completed)
+      let completedUnits = 0;
+      if (userId) {
+        const pathUnits = await db
+          .select({
+            unitId: units.id,
+            totalLessons: sql<number>`COUNT(DISTINCT ${lessons.id})`,
+            completedLessons: sql<number>`COUNT(DISTINCT ${lessonCompletions.lessonId})`,
+          })
+          .from(units)
+          .leftJoin(lessons, eq(units.id, lessons.unitId))
+          .leftJoin(
+            lessonCompletions,
+            and(
+              eq(lessons.id, lessonCompletions.lessonId),
+              eq(lessonCompletions.userId, userId),
+            ),
+          )
+          .where(eq(units.pathId, path.id))
+          .groupBy(units.id);
+
+        completedUnits = pathUnits.filter(
+          (unit) =>
+            Number(unit.totalLessons) > 0 &&
+            Number(unit.completedLessons) === Number(unit.totalLessons),
+        ).length;
+      }
+
       let progress = null;
       if (userId) {
         const [prog] = await db
@@ -190,6 +218,67 @@ async function getVisiblePathsWithProgress(
         progress = prog;
       }
 
+      // Check unlock requirements
+      let isUnlocked = !path.isLocked;
+      if (path.isLocked && userId && path.unlockRequirementType) {
+        if (path.unlockRequirementType === "xp") {
+          // Check if user has enough total XP
+          const requiredXp = Number(path.unlockRequirementValue) || 0;
+          const userTotalXp = progress?.totalXp || 0;
+          isUnlocked = userTotalXp >= requiredXp;
+        } else if (path.unlockRequirementType === "admin") {
+          // Check if user has admin approval for this path
+          const [approval] = await db
+            .select()
+            .from(pathApprovals)
+            .where(
+              and(
+                eq(pathApprovals.pathId, path.id),
+                eq(pathApprovals.userId, userId),
+              ),
+            )
+            .limit(1);
+          isUnlocked = !!approval;
+        } else if (path.unlockRequirementType === "sequential") {
+          // For sequential unlock, check if previous path is completed
+          // Previous path would be the one with orderIndex = current - 1 in same domain
+          const [previousPath] = await db
+            .select({
+              id: paths.id,
+              totalLessons: sql<number>`COUNT(DISTINCT ${lessons.id})`,
+              completedLessons: sql<number>`COUNT(DISTINCT ${lessonCompletions.lessonId})`,
+            })
+            .from(paths)
+            .leftJoin(units, eq(paths.id, units.pathId))
+            .leftJoin(lessons, eq(units.id, lessons.unitId))
+            .leftJoin(
+              lessonCompletions,
+              and(
+                eq(lessons.id, lessonCompletions.lessonId),
+                eq(lessonCompletions.userId, userId),
+              ),
+            )
+            .where(
+              and(
+                eq(paths.domainId, path.domainId),
+                sql`${paths.orderIndex} < ${path.orderIndex}`,
+              ),
+            )
+            .groupBy(paths.id)
+            .orderBy(sql`${paths.orderIndex} DESC`)
+            .limit(1);
+
+          if (previousPath) {
+            const totalLessons = Number(previousPath.totalLessons) || 0;
+            const completedLessons = Number(previousPath.completedLessons) || 0;
+            isUnlocked = totalLessons > 0 && completedLessons >= totalLessons;
+          } else {
+            // No previous path, so this should be unlocked
+            isUnlocked = true;
+          }
+        }
+      }
+
       const totalLessons = Number(counts.totalLessons) || 0;
       const completionPercent =
         totalLessons > 0
@@ -203,8 +292,8 @@ async function getVisiblePathsWithProgress(
         completedLessons: completedLessons,
         completionPercent: completionPercent,
         totalXp: progress?.totalXp || 0,
-        completedUnits: 0, // TODO: Calculate completed units
-        isUnlocked: !path.isLocked, // TODO: Check unlock requirements
+        completedUnits: completedUnits,
+        isUnlocked: isUnlocked,
       };
     }),
   );

@@ -12,24 +12,28 @@ import type { Socket } from 'socket.io-client';
 
 export interface PresenceJoinPayload {
   groupId?: number;
-  sessionId?: string;
+  sessionId?: number;
 }
 
 export interface PresenceLeavePayload {
   groupId?: number;
-  sessionId?: string;
+  sessionId?: number;
 }
 
 export interface PresenceUserJoinedPayload {
   userId: string;
+  userName?: string;
   groupId?: number;
-  sessionId?: string;
+  sessionId?: number;
+  timestamp?: string;
 }
 
 export interface PresenceUserLeftPayload {
   userId: string;
+  userName?: string;
   groupId?: number;
-  sessionId?: string;
+  sessionId?: number;
+  timestamp?: string;
 }
 
 export interface PresenceUpdatePayload {
@@ -120,7 +124,16 @@ export interface GroupStreakUpdatedPayload {
 // Combined Event Map
 // ============================================
 
+export interface ConnectionConfirmedPayload {
+  socketId: string;
+  userId: string;
+  timestamp: string;
+}
+
 export interface ServerToClientEvents {
+  // Connection
+  'connection:confirmed': (payload: ConnectionConfirmedPayload) => void;
+
   // Presence
   'presence:user_joined': (payload: PresenceUserJoinedPayload) => void;
   'presence:user_left': (payload: PresenceUserLeftPayload) => void;
@@ -136,6 +149,26 @@ export interface ServerToClientEvents {
   // Groups
   'group:activity': (payload: GroupActivityPayload) => void;
   'group:streak_updated': (payload: GroupStreakUpdatedPayload) => void;
+
+  // Typing
+  'typing:user_started': (payload: TypingUserPayload) => void;
+  'typing:user_stopped': (payload: TypingUserPayload) => void;
+}
+
+// ============================================
+// Typing Events (for future chat features)
+// ============================================
+
+export interface TypingPayload {
+  groupId?: number;
+  sessionId?: number;
+}
+
+export interface TypingUserPayload {
+  userId: string;
+  userName?: string;
+  groupId?: number;
+  sessionId?: number;
 }
 
 export interface ClientToServerEvents {
@@ -143,6 +176,10 @@ export interface ClientToServerEvents {
   'presence:join': (payload: PresenceJoinPayload) => void;
   'presence:leave': (payload: PresenceLeavePayload) => void;
   'presence:update': (payload: Omit<PresenceUpdatePayload, 'userId'>) => void;
+
+  // Typing
+  'typing:start': (payload: TypingPayload) => void;
+  'typing:stop': (payload: TypingPayload) => void;
 }
 
 // Type-safe Socket
